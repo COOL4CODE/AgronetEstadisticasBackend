@@ -57,6 +57,33 @@ namespace AgronetEstadisticas.Adapter
             return table;
         }
 
+        public DataTable GetDataTable(string connectionName, string mdx, List<MdxParameter> paramerters)
+        {
+            string connectionString = ConfigurationManager.ConnectionStrings[connectionName].ConnectionString;
+            DataTable dataTable = new DataTable();
+
+            MdxConnection connection = new MdxConnection(connectionString);
+            using (connection)
+            {
+                connection.Open();
+                using (MdxCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = mdx;
+                    foreach (var p in paramerters)
+                    {
+                        command.Parameters.Add(p);
+                    }
+                    using (MdxDataAdapter dataAdapter = new MdxDataAdapter())
+                    {
+                        dataAdapter.SelectCommand = command;
+                        dataAdapter.Fill(dataTable);
+                    }
+                }
+            }
+
+            return dataTable;
+        }
+
         private CellSet GetCellSet(string sqlString, string connectionName)
         {
             string connectionString = ConfigurationManager.ConnectionStrings[connectionName].ConnectionString;
@@ -78,5 +105,6 @@ namespace AgronetEstadisticas.Adapter
 
             return results;
         }
+
     }
 }
