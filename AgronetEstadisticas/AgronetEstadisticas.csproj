@@ -193,6 +193,7 @@
     <Compile Include="Models\parametersBinding\report301.cs" />
     <Compile Include="Models\parametersBinding\report401.cs" />
     <Compile Include="Models\parametersBinding\report602.cs" />
+    <Compile Include="Models\parametersBinding\report302.cs" />
     <Compile Include="Models\Series.cs" />
     <Compile Include="Models\Table.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -7,7 +7,7 @@ namespace AgronetEstadisticas.Models
 {
     public class Chart
     {
-        public string name { get; set; }
+        public string subtitle { get; set; }
         public List<Series> series { get; set; }
     }
 }

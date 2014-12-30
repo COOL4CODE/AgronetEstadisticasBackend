@@ -13,6 +13,26 @@ namespace AgronetEstadisticas.Adapter
 {
     public class SQLAdapter
     {
+        public DataTable GetDatatable(string sqlString)
+        {
+            string connectionString = ConfigurationManager.ConnectionStrings["AgronetSQL"].ConnectionString;
+            SqlConnection connection = new SqlConnection(connectionString);
+
+            var results = new DataTable();
+            using (var command = new SqlCommand(sqlString, connection))
+            {
+                connection.Open();
+
+                using (var adapter = new SqlDataAdapter())
+                {
+                    adapter.SelectCommand = command;
+                    adapter.Fill(results);
+                }
+            }
+
+            return results;
+        }
+
         public List<Dictionary<string, object>> GetResults(string sqlString)
         {
             string connectionString = ConfigurationManager.ConnectionStrings["AgronetSQL"].ConnectionString;

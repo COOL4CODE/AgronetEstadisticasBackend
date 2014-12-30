@@ -9,6 +9,7 @@ using System.Web.Http.Description;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
+using System.Data;
 
 using AgronetEstadisticas.Adapter;
 using AgronetEstadisticas.Models;
@@ -67,8 +68,9 @@ namespace AgronetEstadisticas.Controllers
                     int i = 1;
                     foreach (var outerGroup in queryCharts)
                     {
-                        if (i == parameters.id) {
-                            Chart chart = new Chart { name = outerGroup.Key.ToString(), series = new List<Series>() };
+                        if (i == parameters.id)
+                        {
+                            Chart chart = new Chart { subtitle = outerGroup.Key.ToString(), series = new List<Series>() };
                             foreach (var innerGroup in outerGroup)
                             {
                                 var serie = new Series { name = innerGroup.Key.ToString(), data = new List<Data>() };
@@ -84,14 +86,14 @@ namespace AgronetEstadisticas.Controllers
                             }
                             returnData = (Chart)chart;
                             break;
-                        }                        
+                        }
                         i++;
-                    }                   
-                } else if (parameters.tipo == "tabla") {
-                    /*Table table = new Table { name = "", rows = new List<Dictionary<string,object>>()};
-                    table.rows = results;
-
-                    returnData = (Table)table;*/
+                    }
+                }
+                else if (parameters.tipo == "tabla")
+                {
+                    Table table = new Table { rows = adapter.GetDatatable(sql) };
+                    returnData = (Table)table;
                 }
             }
             else
@@ -100,6 +102,109 @@ namespace AgronetEstadisticas.Controllers
             }
 
             return Ok(returnData);
+        }
+
+        [Route("api/Report/302")]
+        public async Task<IHttpActionResult> postReport302(report302 parameters)
+        {
+            Object returnData = null;
+
+            var adapter = new SQLAdapter();
+            string sql = String.Format(@"create table  #SP_PRECIOS_LECHE_REGION (
+	                                fecha date, 
+	                                codigoRegion int,
+	                                precio int,
+	                                volumen int,
+	                                variacionPrecio float,
+	                                variacionVolumen float
+                                )
+                                insert into #SP_PRECIOS_LECHE_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_REGION]
+		                                @Fecha_inicial = N'{0}',
+		                                @Fecha_final = N'{1}'
+                                SELECT 
+	                                region.descripcion_Region, 
+	                                #SP_PRECIOS_LECHE_REGION.fecha,
+	                                #SP_PRECIOS_LECHE_REGION.precio,
+	                                #SP_PRECIOS_LECHE_REGION.volumen,
+	                                ISNULL(#SP_PRECIOS_LECHE_REGION.variacionPrecio,0) as variacionPrecio,
+	                                ISNULL(#SP_PRECIOS_LECHE_REGION.variacionVolumen,0) as variacionVolumen
+                                 FROM  AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_REGION 
+                                 ON #SP_PRECIOS_LECHE_REGION.codigoRegion = region.codigo_Region
+                                 WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}' and '{3}'
+
+                                DROP TABLE #SP_PRECIOS_LECHE_REGION", parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"), parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"));
+
+            DataTable result = adapter.GetDatatable(sql);
+
+            if (parameters.tipo == "grafico")
+            {                
+                switch (parameters.id)
+                {
+                    case 1:
+                        Chart chart1 = new Chart { subtitle = "Tendencia mensual al precio", series = new List<Series>() };
+
+                        var queryCharts = from r in result.AsEnumerable()
+                                          group r by r["descripcion_Region"] into seriesGroup
+                                          select seriesGroup;
+
+                        foreach (var outerGroup in queryCharts)
+                        {
+                            var serie = new Series { name = outerGroup.Key.ToString(), data = new List<Data>() };
+                            foreach (var element in outerGroup)
+                            {
+                                var name = Convert.ToDateTime(element["fecha"]);
+                                var y = Convert.ToDouble(element["precio"]);
+                                var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                serie.data.Add(data);
+                            }
+                            chart1.series.Add(serie);
+                        }
+
+                        returnData = (Chart)chart1;
+                        break;
+                    case 2:
+                        Chart chart2 = new Chart { subtitle = "Tendencia mensual del volumen", series = new List<Series>() };
+
+                        var queryCharts1 = from r in result.AsEnumerable()
+                                           group r by r["descripcion_Region"] into seriesGroup
+                                           select seriesGroup;
+
+                        foreach (var outerGroup in queryCharts1)
+                        {
+                            var serie = new Series { name = outerGroup.Key.ToString(), data = new List<Data>() };
+                            foreach (var element in outerGroup)
+                            {
+                                var name = Convert.ToDateTime(element["fecha"]);
+                                var y = Convert.ToDouble(element["volumen"]);
+                                var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                serie.data.Add(data);
+                            }
+                            chart2.series.Add(serie);
+                        }
+
+                        returnData = (Chart)chart2;
+                        break;
+                }
+
+            }
+            else if (parameters.tipo == "tabla")
+            {
+                switch (parameters.id)
+                {
+                    case 1:
+                        Table table = new Table { rows = result };
+                        returnData = (Table)table;
+                        break;
+                }
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+
         }
 
     }
