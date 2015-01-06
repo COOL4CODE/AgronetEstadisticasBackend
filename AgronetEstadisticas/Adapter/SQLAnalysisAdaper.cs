@@ -78,6 +78,8 @@ namespace AgronetEstadisticas.Adapter
                         dataAdapter.SelectCommand = command;
                         dataAdapter.Fill(dataTable);
                     }
+
+                    connection.Close();
                 }
             }
 

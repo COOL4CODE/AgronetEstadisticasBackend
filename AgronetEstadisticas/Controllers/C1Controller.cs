@@ -21,7 +21,7 @@ namespace AgronetEstadisticas.Controllers
     public class C1Controller : ApiController
     {
         [Route("api/Report/101")]
-        public async Task<IHttpActionResult> postReport101(report101 parameters)
+        public IHttpActionResult postReport101(report101 parameters)
         {
             Object returnData = null;
 
@@ -198,6 +198,78 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
             }
 
             if (returnData == null) {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/102")]
+        public IHttpActionResult postReport102(report102 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/103")]
+        public IHttpActionResult postReport103(report103 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/104")]
+        public IHttpActionResult postReport104(report104 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/105")]
+        public IHttpActionResult postReport105(report105 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/106")]
+        public IHttpActionResult postReport106(report106 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/107")]
+        public IHttpActionResult postReport107(report107 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
                 return NotFound();
             }
 

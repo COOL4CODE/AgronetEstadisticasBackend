@@ -21,7 +21,7 @@ namespace AgronetEstadisticas.Controllers
     public class C3Controller : ApiController
     {
         [Route("api/Report/301")]
-        public async Task<IHttpActionResult> postReport301(report301 parameters)
+        public IHttpActionResult postReport301(report301 parameters)
         {
             string sql = String.Format(@"SELECT variableCalidad.descripcion_VariableCalidad,
                                             region.descripcion_Region,
@@ -36,14 +36,14 @@ namespace AgronetEstadisticas.Controllers
                                             calidadRegional.fecha_CalidadRegional DESC", parameters.anio_inicial.ToString("yyyy-MM-dd"), parameters.anio_final.ToString("yyyy-MM-dd"));
 
             var adapter = new SQLAdapter();
-            var results = adapter.GetResults(sql);
+            var results = adapter.GetDatatable(sql);
             Object returnData = null;
 
             if (results != null)
             {
                 if (parameters.tipo == "parametro")
                 {
-                    var queryParameters = from p in results
+                    var queryParameters = from p in results.AsEnumerable()
                                           orderby p["fecha_CalidadRegional"]
                                           select p["fecha_CalidadRegional"];
 
@@ -58,7 +58,7 @@ namespace AgronetEstadisticas.Controllers
                 }
                 else if (parameters.tipo == "grafico")
                 {
-                    var queryCharts = from r in results
+                    var queryCharts = from r in results.AsEnumerable()
                                       group r by r["descripcion_VariableCalidad"] into chartGroup
                                       from seriesGroup in
                                           (from r in chartGroup
@@ -205,6 +205,78 @@ namespace AgronetEstadisticas.Controllers
 
             return Ok(returnData);
 
+        }
+
+        [Route("api/Report/303")]
+        public IHttpActionResult postReport303(report303 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/304")]
+        public IHttpActionResult postReport304(report304 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/305")]
+        public IHttpActionResult postReport305(report305 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/306")]
+        public IHttpActionResult postReport306(report306 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/307")]
+        public IHttpActionResult postReport307(report307 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/308")]
+        public IHttpActionResult postReport308(report308 parameters)
+        {
+            Object returnData = null;
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
         }
 
     }

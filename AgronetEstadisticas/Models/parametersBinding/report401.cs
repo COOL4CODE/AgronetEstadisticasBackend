@@ -7,7 +7,6 @@ namespace AgronetEstadisticas.Models.parametersBinding
 {
     public class report401 : report
     {
-
         public string anio_inicial { get; set; }
         public string anio_final { get; set; }
         public string cadena { get; set; }
