@@ -105,7 +105,7 @@ namespace AgronetEstadisticas.Controllers
         }
 
         [Route("api/Report/302")]
-        public async Task<IHttpActionResult> postReport302(report302 parameters)
+        public IHttpActionResult postReport302(report302 parameters)
         {
             Object returnData = null;
 

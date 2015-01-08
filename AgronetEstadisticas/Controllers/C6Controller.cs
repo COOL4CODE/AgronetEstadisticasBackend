@@ -36,41 +36,13 @@ namespace AgronetEstadisticas.Controllers
         [Route("api/Report/602")]
         public IHttpActionResult postReport602(report602 parameters)
         {
-            string sql = @"SELECT NON EMPTY 
---PARAMETRO 1 Año inicial
-{[Periodo].[Anho].&[2000]:
--- PARAMETRO 2 Año final
-[Periodo].[Anho].&[2005].[Description]}*
-{[Measures].[Valor Millones Pesos]} ON 0,
-TopCount({[Geografia].[Departamento].[Departamento]},10,[Measures].[Valor Millones Pesos]) ON 1
-FROM
-[Agronet Credito Web]
-WHERE [Intermediario Financiero].[Intermediario Financiero].&[40];";
-            var adapter = new SQLAnalysisAdaper();
-            var results = adapter.GetTable(sql, "AgronetSQLAnalysisServicesCredito");
             Object returnData = null;
-
-            if (results != null)
-            {
-                if (parameters.tipo == "parametro")
-                {
-
-                }
-                else if (parameters.tipo == "grafico")
-                {
-
-                }
-                else if (parameters.tipo == "tabla")
-                {
-                    returnData = (Table)results;
-                }
-            }
-            else
+            if (returnData == null)
             {
                 return NotFound();
             }
 
-            return Ok(returnData);
+            return Ok(returnData);   
         }
 
         [Route("api/Report/603")]

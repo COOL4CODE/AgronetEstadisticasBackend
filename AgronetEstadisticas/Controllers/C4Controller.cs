@@ -102,7 +102,7 @@ namespace AgronetEstadisticas.Controllers
             }
             else if (parameters.tipo == "tabla")
             {
-                Table table = new Table { columns = new List<Column>(), rows = new DataTable() };
+                Table table = new Table { rows = new DataTable() };
                 mdxParams.Add(new MdxParameter("@cadena", String.Format("[Producto].[Cadena].&[{0}]", parameters.cadena)));
                 mdxParams.Add(new MdxParameter("~[Producto].[Cadena].[Cadena]", "cadena"));
                 mdxParams.Add(new MdxParameter("~[Producto].[Cadena-Partida10].[Descripcion Partida10 Dig Union]", "partidas"));
