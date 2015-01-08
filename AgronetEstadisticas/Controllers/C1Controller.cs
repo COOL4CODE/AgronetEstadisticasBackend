@@ -649,6 +649,26 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
         public IHttpActionResult postReport104(report104 parameters)
         {
             Object returnData = null;
+            PostgresqlAdapter adapter = new PostgresqlAdapter();
+
+            string sqlString = @"SELECT base.departamento.codigo,
+                                    base.departamento.nombre,
+                                    COALESCE(eva_mpal.productos.grupo, 0) as grupo,
+                                    eva_mpal.productos.codigoagronetcultivo,
+                                    eva_mpal.productos.nombredescriptorcultivo,
+                                    COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva,
+                                    COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0) as area_eva,
+                                    COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0) as produccion_eva,
+                                    COALESCE((eva_mpal.evadepartamentalanual.produccion_eva/eva_mpal.evadepartamentalanual.area_eva), 0) AS rendimiento,
+                                    COALESCE(eva_mpal.evadepartamentalanual.area_eva / ( SELECT SUM(e.area_eva) total_nacion_area FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo )*100, 0 )AS area_total_nacional,
+                                    COALESCE(eva_mpal.evadepartamentalanual.produccion_eva / ( SELECT SUM(e.produccion_eva) AS total_nacion_produccion FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo )*100, 0) AS produccion_total_nacional,
+                                    COALESCE((SELECT SUM(e.area_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / (SELECT SUM(e.area_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.grupo = eva_mpal.productos.grupo)*100 , 0) AS participacion_transi_area,
+                                    COALESCE((SELECT SUM(e.produccion_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / (SELECT SUM(e.produccion_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.grupo = eva_mpal.productos.grupo)*100, 0) AS participacion_transi_produccion,
+                                    ((SELECT COALESCE(SUM(e.area_eva),0) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo) / eva_mpal.evadepartamentalanual.area_eva) AS participacion_area_nacional,
+                                    ((SELECT COALESCE(SUM(e.produccion_eva),0) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / eva_mpal.evadepartamentalanual.produccion_eva) AS participacion_produccion_nacional
+                                    FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
+                                    INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
+                                    WHERE eva_mpal.evadepartamentalanual.anho_eva = " + parameters.anio + " AND eva_mpal.productos.nombredescriptorcultivo = '" + parameters.producto + "' ORDER BY eva_mpal.evadepartamentalanual.produccion_eva desc";
 
             switch (parameters.tipo)
             {
@@ -657,36 +677,94 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                     switch (parameters.id)
                     {
                         case 1:
+                            string sql1 = @"SELECT DISTINCT
+                                            COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva
+                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
+                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
+                                            ORDER BY anho_eva asc";
+                            DataTable data1 = adapter.GetDataTable(sql1);
+                            Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anho_eva"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                parameter1.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter1;
                             break;
                         case 2:
+                            string sql2 = @"SELECT DISTINCT
+                                            eva_mpal.productos.nombredescriptorcultivo
+                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
+                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
+                                            ORDER BY nombredescriptorcultivo";
+                            DataTable data2 = adapter.GetDataTable(sql2);
+                            Parameter parameter2 = new Parameter { name = "producto", data = new List<ParameterData>() };
+                            foreach (var p in (from p in data2.AsEnumerable()
+                                               select p["nombredescriptorcultivo"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                parameter2.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter2;
                             break;
                         case 3:
+                            Parameter parameter3 = new Parameter { name = "ordenamiento", data = new List<ParameterData>() };
+                            ParameterData pdata1 = new ParameterData { name = "Área", value = "area_eva" };
+                            ParameterData pdata2 = new ParameterData { name = "Producción", value = "produccion_eva" };
+                            ParameterData pdata3 = new ParameterData { name = "Rendimiento", value = "rendimiento" };
+                            parameter3.data.Add(pdata1);
+                            parameter3.data.Add(pdata2);
+                            parameter3.data.Add(pdata3);
+                            returnData = (Parameter)parameter3;
                             break;
                     }
 
                     break;
                 case "grafico":
 
+                    DataTable results = adapter.GetDataTable(sqlString);
                     switch (parameters.id)
                     {
                         case 1:
+                            Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            var query1 = from r in results.AsEnumerable()
+                                         group r by r["nombredescriptorcultivo"];
+
+                            foreach (var productoGroup in query1)
+                            {
+                                var serie1 = new Series { name = productoGroup.Key.ToString(), data = new List<Data>() };
+                                foreach (var el1 in productoGroup)
+                                {
+                                    var data = new Data { name = Convert.ToString(el1["nombre"]), y = Convert.ToDouble(el1[parameters.ordenamiento]) };
+                                    serie1.data.Add(data);
+
+                                }
+                                chart1.series.Add(serie1);
+                            }
+
+                            returnData = (Chart)chart1;
                             break;
                         case 2:
-                            break;
-                        case 3:
-                            break;
-                    }
+                            Chart chart2 = new Chart { subtitle = "", series = new List<Series>() };
 
-                    break;
-                case "tabla":
+                            var query2 = from r in results.AsEnumerable()
+                                         group r by r["nombredescriptorcultivo"];
 
-                    switch (parameters.id)
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            foreach (var productoGroup in query2)
+                            {
+                                var serie1 = new Series { name = productoGroup.Key.ToString(), data = new List<Data>() };
+                                foreach (var el1 in productoGroup)
+                                {
+                                    var data = new Data { name = Convert.ToString(el1["nombre"]), y = Convert.ToDouble(el1[parameters.ordenamiento]) };
+                                    serie1.data.Add(data);
+
+                                }
+                                chart2.series.Add(serie1);
+                            }
+
+                            returnData = (Chart)chart2;
                             break;
                     }
 
@@ -705,7 +783,19 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
         public IHttpActionResult postReport105(report105 parameters)
         {
             Object returnData = null;
+            PostgresqlAdapter adapter = new PostgresqlAdapter();
 
+            string sqlString = @"SELECT base.departamento.codigo,
+                                    base.departamento.nombre as departamento,
+                                    eva_mpal.productos.codigoagronetcultivo,
+                                    eva_mpal.productos.nombredescriptorcultivo as producto,
+                                    COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva,
+                                    COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0) as area_eva,
+                                    COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0) as produccion_eva,
+                                    COALESCE((eva_mpal.evadepartamentalanual.produccion_eva/NULLIF(eva_mpal.evadepartamentalanual.area_eva,0)), 0) AS rendimiento
+                                    FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
+                                    INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
+                                    WHERE eva_mpal.evadepartamentalanual.anho_eva >= "+parameters.anio_inicial+" AND eva_mpal.evadepartamentalanual.anho_eva <= "+parameters.anio_final+" AND base.departamento.nombre = '"+parameters.departamento+"'";
             switch (parameters.tipo)
             {
                 case "parametro":
@@ -713,23 +803,90 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                     switch (parameters.id)
                     {
                         case 1:
+                            string sql1 = @"SELECT DISTINCT
+                                            COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva
+                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
+                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
+                                            ORDER BY anho_eva asc";
+                            DataTable data1 = adapter.GetDataTable(sql1);
+                            Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anho_eva"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                parameter1.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter1;
                             break;
                         case 2:
-                            break;
-                        case 3:
+                            string sql2 = @"SELECT DISTINCT
+                                            base.departamento.nombre
+                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
+                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
+                                            ORDER BY base.departamento.nombre";
+                            DataTable data2 = adapter.GetDataTable(sql2);
+                            Parameter parameter2 = new Parameter { name = "departamento", data = new List<ParameterData>() };
+                            foreach (var p in (from p in data2.AsEnumerable()
+                                               select p["nombre"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                parameter2.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter2;
                             break;
                     }
 
                     break;
                 case "grafico":
 
+                    DataTable results = adapter.GetDataTable(sqlString);
                     switch (parameters.id)
                     {
                         case 1:
+                            Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            var query1 = from r in results.AsEnumerable()
+                                         group r by r["departamento"] into deptoGroup
+                                         from productGroup in (from d in deptoGroup
+                                                               group d by d["producto"])
+                                         group productGroup by deptoGroup.Key;
+
+                            foreach (var deptoGroup in query1)
+                            {
+                                var serie1 = new Series { name = deptoGroup.Key.ToString(), data = new List<Data>() };
+                                foreach (var productGroup in deptoGroup)
+                                {
+                                    double y = productGroup.Sum(d => Convert.ToDouble(d["area_eva"]));
+                                    var data = new Data { name = Convert.ToString(productGroup.Key.ToString()), y = y };
+                                    serie1.data.Add(data);
+                                }
+                                chart1.series.Add(serie1);
+                            }
+
+                            returnData = (Chart)chart1;
                             break;
                         case 2:
-                            break;
-                        case 3:
+                            Chart chart2 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            var query2 = from r in results.AsEnumerable()
+                                         group r by r["departamento"] into deptoGroup
+                                         from productGroup in (from d in deptoGroup
+                                                               group d by d["producto"])
+                                         group productGroup by deptoGroup.Key;
+
+                            foreach (var deptoGroup in query2)
+                            {
+                                var serie1 = new Series { name = deptoGroup.Key.ToString(), data = new List<Data>() };
+                                foreach (var productGroup in deptoGroup)
+                                {
+                                    double y = productGroup.Sum(d => Convert.ToDouble(d["produccion_eva"]));
+                                    var data = new Data { name = Convert.ToString(productGroup.Key.ToString()), y = y };
+                                    serie1.data.Add(data);
+                                }
+                                chart2.series.Add(serie1);
+                            }
+
+                            returnData = (Chart)chart2;
                             break;
                     }
 
@@ -739,10 +896,8 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            Table table = new Table { rows = adapter.GetDataTable(sqlString) };
+                            returnData = (Table)table;
                             break;
                     }
 
