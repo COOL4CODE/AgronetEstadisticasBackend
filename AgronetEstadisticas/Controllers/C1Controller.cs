@@ -1131,6 +1131,15 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
         {
             Object returnData = null;
 
+            string sqlString = @"SELECT base.departamento.nombre AS departamento_nombre, 
+                                pecuario.produccionpecuaria.periodo,
+                                COALESCE(pecuario.produccionpecuaria.produccion, 0) as produccion_pecuaria, 
+                                pecuario.produccionpecuaria.unidad
+                                FROM pecuario.producto INNER JOIN pecuario.produccionpecuaria ON pecuario.producto.codigo = pecuario.produccionpecuaria.producto
+                                INNER JOIN base.departamento ON base.departamento.codigo = pecuario.produccionpecuaria.departamento
+                                WHERE pecuario.produccionpecuaria.periodo >= "+parameters.anio_inicial+" AND pecuario.produccionpecuaria.periodo <= "+parameters.anio_final+" AND pecuario.producto.codigo = "+parameters.tipo_pecuario+" AND base.departamento.nombre IN ("+ string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) +") ORDER BY base.departamento.nombre, pecuario.produccionpecuaria.periodo";
+
+            PostgresqlAdapter adapter = new PostgresqlAdapter();
             switch (parameters.tipo)
             {
                 case "parametro":
@@ -1138,10 +1147,56 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                     switch (parameters.id)
                     {
                         case 1:
+                            string sql1 = @"SELECT DISTINCT 
+                                            pecuario.produccionpecuaria.periodo
+                                            FROM pecuario.producto INNER JOIN pecuario.produccionpecuaria ON pecuario.producto.codigo = pecuario.produccionpecuaria.producto
+                                            INNER JOIN base.departamento ON base.departamento.codigo = pecuario.produccionpecuaria.departamento
+                                            ORDER BY pecuario.produccionpecuaria.periodo asc";
+                            DataTable data1 = adapter.GetDataTable(sql1);
+                            Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["periodo"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                parameter1.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter1;
                             break;
                         case 2:
+                            string sql2 = @"SELECT DISTINCT
+                                            pecuario.producto.codigo, 
+                                            pecuario.producto.nombre, 
+                                            base.departamento.codigo AS departamento_codigo, 
+                                            base.departamento.nombre AS departamento_nombre 
+                                            FROM pecuario.producto INNER JOIN pecuario.produccionpecuaria ON pecuario.producto.codigo = pecuario.produccionpecuaria.producto
+                                            INNER JOIN base.departamento ON base.departamento.codigo = pecuario.produccionpecuaria.departamento
+                                            WHERE pecuario.producto.codigo = " + parameters.tipo_pecuario + " ORDER BY base.departamento.codigo";
+                            DataTable data2 = adapter.GetDataTable(sql2);
+                            Parameter parameter2 = new Parameter { name = "departamento", data = new List<ParameterData>() };
+                            foreach (var p in (from p in data2.AsEnumerable()
+                                               select p["departamento_nombre"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                parameter2.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter2;
                             break;
                         case 3:
+                            string sql3 = @"SELECT DISTINCT
+                                            pecuario.producto.codigo, 
+                                            pecuario.producto.nombre
+                                            FROM pecuario.producto INNER JOIN pecuario.produccionpecuaria ON pecuario.producto.codigo = pecuario.produccionpecuaria.producto
+                                            INNER JOIN base.departamento ON base.departamento.codigo = pecuario.produccionpecuaria.departamento
+                                            ORDER BY pecuario.producto.nombre";
+                            DataTable data3 = adapter.GetDataTable(sql3);
+                            Parameter parameter3 = new Parameter { name = "tipo_pecuario", data = new List<ParameterData>() };
+                            foreach (var p in (from p in data3.AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p["codigo"]), value = Convert.ToString(p["nombre"]) };
+                                parameter3.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter3;
                             break;
                     }
 
@@ -1151,10 +1206,28 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            var query1 = from r in adapter.GetDataTable(sqlString).AsEnumerable()
+                                         group r by r["departamento_nombre"] into deptoGroup
+                                         from anioGroup in (from d in deptoGroup
+                                                               group d by d["periodo"])
+                                         group anioGroup by deptoGroup.Key;
+
+                            foreach (var deptoGroup in query1)
+                            {
+                                var serie = new Series { name = deptoGroup.Key.ToString(), data = new List<Data>() };
+                                foreach (var anioGroup in deptoGroup)
+                                {
+                                    double y = anioGroup.Sum(d => Convert.ToDouble(d["produccion_pecuaria"]));
+                                    var data = new Data { name = Convert.ToString(anioGroup.Key.ToString()), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart1;
+
                             break;
                     }
 
@@ -1164,10 +1237,8 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            Table table = new Table { rows = adapter.GetDataTable(sqlString) };
+                            returnData = (Table)table;
                             break;
                     }
 
