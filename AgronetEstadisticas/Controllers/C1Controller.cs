@@ -52,12 +52,12 @@ namespace AgronetEstadisticas.Controllers
                         string sql2 = @"SELECT DISTINCT
                                         base.departamento.nombre departamento
                                         FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                        INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva;";
+                                        INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva ORDER BY base.departamento.nombre;";
                         DataTable data2 = adapter.GetDataTable(sql2);
                         foreach (var p in (from p in data2.AsEnumerable()
                                            select p["departamento"]))
                         {
-                            ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                            ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                             parameter.data.Add(param);
                         }
                         break;
@@ -72,7 +72,7 @@ namespace AgronetEstadisticas.Controllers
                         foreach (var p in (from p in data3.AsEnumerable()
                                            select p["producto"]))
                         {
-                            ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                            ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                             parameter.data.Add(param);
                         }
                         break;
@@ -243,7 +243,7 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                             foreach (var p in (from p in data1.AsEnumerable()
                                                select p["nombredescriptorcultivo"]))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                                 parameter1.data.Add(param);
                             }
                             returnData = (Parameter)parameter1;
@@ -270,24 +270,41 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                 case "grafico":
 
                     string sqlString1 = @"SELECT 
-                                    base.departamento.codigo,
-       	                            base.departamento.nombre,
-    	                            COALESCE(eva_mpal.productos.grupo, 0) as grupo,
-	                            eva_mpal.productos.codigoagronetcultivo,
-	                            eva_mpal.productos.nombredescriptorcultivo,
-	                            COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva,
-	                            COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0) as area_eva,
-	                            COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0) as produccion_eva,
-	                            COALESCE((eva_mpal.evadepartamentalanual.produccion_eva/eva_mpal.evadepartamentalanual.area_eva), 0) AS rendimiento,
-	                            COALESCE(eva_mpal.evadepartamentalanual.area_eva / ( SELECT SUM(e.area_eva) total_nacion_area FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo )*100, 0 )AS area_total_nacional,
-	                            COALESCE(eva_mpal.evadepartamentalanual.produccion_eva / ( SELECT SUM(e.produccion_eva) AS total_nacion_produccion FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo )*100, 0) AS produccion_total_nacional,
-    	                        COALESCE((SELECT SUM(e.area_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / (SELECT SUM(e.area_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.grupo = eva_mpal.productos.grupo)*100 , 0) AS participacion_transi_area,
-	                            COALESCE((SELECT SUM(e.produccion_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / (SELECT SUM(e.produccion_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.grupo = eva_mpal.productos.grupo)*100, 0) AS participacion_transi_produccion,
-   	                            ((SELECT COALESCE(SUM(e.area_eva),0) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo) / eva_mpal.evadepartamentalanual.area_eva) AS participacion_area_nacional,
-    	                        ((SELECT COALESCE(SUM(e.produccion_eva),0) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / eva_mpal.evadepartamentalanual.produccion_eva) AS participacion_produccion_nacional
-                                FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-	                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                WHERE eva_mpal.evadepartamentalanual.anho_eva >= " + parameters.anio_inicial + " AND eva_mpal.evadepartamentalanual.anho_eva <= " + parameters.anio_final + " AND eva_mpal.productos.nombredescriptorcultivo = '" + parameters.producto + "'";
+                                            eva_mpal.productos.nombredescriptorcultivo, 
+                                            COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) AS anho_eva, 
+                                            SUM(COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0)) AS area_eva, 
+                                            SUM(COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0)) AS produccion_eva,
+                                            SUM(COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0)) / SUM(COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0))  AS rendimiento,
+                                            (
+	                                            SELECT COALESCE((SELECT 
+		                                            COALESCE(SUM(e.produccion_eva), 0)
+	                                            FROM eva_mpal.producto p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva
+	                                            WHERE p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo AND e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva
+	                                            GROUP BY e.anho_eva, p.codigoagronetcultivo),0)
+                                            ) /
+                                            (
+	                                            SELECT
+		                                            COALESCE(SUM(e.produccion_eva), 0)
+	                                            FROM eva_mpal.producto p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva
+	                                            WHERE p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo AND e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva
+	                                            GROUP BY e.anho_eva, p.codigoagronetcultivo
+                                            ) as indice_produccion_transitorio,
+                                            (
+	                                            SELECT COALESCE((SELECT 
+		                                            COALESCE(SUM(e.area_eva), 0)
+	                                            FROM eva_mpal.producto p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva
+	                                            WHERE p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo AND e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva
+	                                            GROUP BY e.anho_eva, p.codigoagronetcultivo),0)
+                                            ) / 
+                                            (
+	                                            SELECT 
+		                                            COALESCE(SUM(e.area_eva), 0)
+	                                            FROM eva_mpal.producto p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva
+	                                            WHERE p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo AND e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva
+	                                            GROUP BY e.anho_eva, p.codigoagronetcultivo
+                                            ) as indice_area_transitorio
+                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
+                                            WHERE eva_mpal.evadepartamentalanual.anho_eva >= " + parameters.anio_inicial+" AND eva_mpal.evadepartamentalanual.anho_eva <= "+parameters.anio_final+" AND eva_mpal.productos.nombredescriptorcultivo = '"+parameters.producto+"' GROUP BY eva_mpal.evadepartamentalanual.anho_eva, eva_mpal.productos.nombredescriptorcultivo ORDER BY eva_mpal.evadepartamentalanual.anho_eva asc";
                     
                     DataTable results = adapter.GetDataTable(sqlString1);
 
@@ -326,8 +343,8 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                             foreach (var d1 in (from d in results.AsEnumerable()
                                                 select d))
                             {
-                                Data data1 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["participacion_transi_produccion"]) };
-                                Data data2 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["participacion_transi_area"]) };
+                                Data data1 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["indice_produccion_transitorio"]) };
+                                Data data2 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["indice_area_transitorio"]) };
 
                                 serie3.data.Add(data1);
                                 serie4.data.Add(data2);
@@ -436,7 +453,7 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                             foreach (var p in (from p in data1.AsEnumerable()
                                                select p["nombredescriptorcultivo"]))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                                 parameter1.data.Add(param);
                             }
                             returnData = (Parameter)parameter1;
@@ -452,7 +469,7 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                             foreach (var p in (from p in data2.AsEnumerable()
                                                select p["nombre"]))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
@@ -703,7 +720,7 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                             foreach (var p in (from p in data2.AsEnumerable()
                                                select p["nombredescriptorcultivo"]))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
@@ -829,7 +846,7 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                             foreach (var p in (from p in data2.AsEnumerable()
                                                select p["nombre"]))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
@@ -947,7 +964,7 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                             foreach (var p in (from p in data2.AsEnumerable()
                                                select p["nombre"]))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
@@ -1176,7 +1193,7 @@ FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.pr
                             foreach (var p in (from p in data2.AsEnumerable()
                                                select p["departamento_nombre"]))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
