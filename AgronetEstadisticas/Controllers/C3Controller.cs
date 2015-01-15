@@ -137,7 +137,7 @@ namespace AgronetEstadisticas.Controllers
             DataTable result = adapter.GetDatatable(sql);
 
             if (parameters.tipo == "grafico")
-            {                
+            {
                 switch (parameters.id)
                 {
                     case 1:
@@ -210,7 +210,103 @@ namespace AgronetEstadisticas.Controllers
         [Route("api/Report/303")]
         public IHttpActionResult postReport303(report303 parameters)
         {
+
             Object returnData = null;
+
+            var adapter = new SQLAdapter();
+			string sql = String.Format(@"create table  #SP_PRECIOS_LECHE_DEPARTAMENTO(
+	                                fecha date,
+	                                codigoDepartamento int,
+	                                precio int,
+	                                volumen int,
+	                                variacionPrecio float,
+	                                variacionVolumen float
+                                )
+                                insert into #SP_PRECIOS_LECHE_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_REGION]
+		                                @Fecha_inicial = N'{0}',
+		                                @Fecha_final = N'{1}'
+                                SELECT 
+	                            regionDepartamento.descripcionDepartamento_RegionDepartamento, 
+	                            regionDepartamento.codigoDepartamento_RegionDepartamento,
+	                            #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha,
+	                            #SP_PRECIOS_LECHE_DEPARTAMENTO.precio,
+	                            #SP_PRECIOS_LECHE_DEPARTAMENTO.volumen,
+	                            ISNULL(#SP_PRECIOS_LECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                            ISNULL(#SP_PRECIOS_LECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_DEPARTAMENTO 
+                                ON #SP_PRECIOS_LECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                WHERE #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha between {0} and {1}
+                                 and regionDepartamento.descripcionDepartamento_RegionDepartamento = {2}
+                                 DROP TABLE #SP_PRECIOS_LECHE_DEPARTAMENTO
+                                "
+                    , parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"), parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"));
+
+            DataTable result = adapter.GetDatatable(sql);
+
+
+            if (parameters.tipo == "grafico")
+            {
+                switch (parameters.id)
+                {
+                    case 1:
+                        Chart chart1 = new Chart { subtitle = "Tendencia mensual del precio", series = new List<Series>() };
+
+                        var queryCharts = from r in result.AsEnumerable()
+                                          group r by r["descripcionDepartamento_RegionDepartamento"] into seriesGroup
+                                          select seriesGroup;
+
+                        foreach (var outerGroup in queryCharts)
+                        {
+                            var serie = new Series { name = outerGroup.Key.ToString(), data = new List<Data>() };
+                            foreach (var element in outerGroup)
+                            {
+                                var name = Convert.ToDateTime(element["fecha"]);
+                                var y = Convert.ToDouble(element["precio"]);
+                                var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                serie.data.Add(data);
+                            }
+                            chart1.series.Add(serie);
+                        }
+
+                        returnData = (Chart)chart1;
+                        break;
+                    case 2:
+                        Chart chart2 = new Chart { subtitle = "Tendencia mensual del volumen", series = new List<Series>() };
+
+                        var queryCharts1 = from r in result.AsEnumerable()
+                                           group r by r["descripcion_Region"] into seriesGroup
+                                           select seriesGroup;
+
+                        foreach (var outerGroup in queryCharts1)
+                        {
+                            var serie = new Series { name = outerGroup.Key.ToString(), data = new List<Data>() };
+                            foreach (var element in outerGroup)
+                            {
+                                var name = Convert.ToDateTime(element["fecha"]);
+                                var y = Convert.ToDouble(element["volumen"]);
+                                var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                serie.data.Add(data);
+                            }
+                            chart2.series.Add(serie);
+                        }
+
+                        returnData = (Chart)chart2;
+                        break;
+                }
+
+            }
+            else if (parameters.tipo == "tabla")
+            {
+                switch (parameters.id)
+                {
+                    case 1:
+                        Table table = new Table { rows = result };
+                        returnData = (Table)table;
+                        break;
+                }
+            }
+
+
             if (returnData == null)
             {
                 return NotFound();
