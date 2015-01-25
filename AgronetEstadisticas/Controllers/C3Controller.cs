@@ -235,11 +235,11 @@ namespace AgronetEstadisticas.Controllers
 	                            ISNULL(#SP_PRECIOS_LECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
                                 FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_DEPARTAMENTO 
                                 ON #SP_PRECIOS_LECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
-                                WHERE #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha between {0} and {1}
-                                 and regionDepartamento.descripcionDepartamento_RegionDepartamento = {2}
+                                WHERE #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha between {2} and {3}
+                                 and regionDepartamento.descripcionDepartamento_RegionDepartamento = {4}
                                  DROP TABLE #SP_PRECIOS_LECHE_DEPARTAMENTO
                                 "
-                    , parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"), parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"));
+                    , parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"), parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"),parameters.departamento);
 
             DataTable result = adapter.GetDatatable(sql);
 
@@ -319,10 +319,66 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport304(report304 parameters)
         {
             Object returnData = null;
+
+            var adapter = new SQLAdapter();
+            string sql = String.Format(@"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
+	                                    fecha date,
+	                                    codigoDepartamento int,
+	                                    codigoProducto int,
+	                                    codigoTipoProducto int,
+	                                    producto text,
+	                                    unidadPrecio text,
+	                                    precio int,
+	                                    volumen int,
+	                                    unidadVolumen text,
+	                                    variacionPrecio float,
+	                                    variacionVolumen float
+                                    )
+                                    insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
+		                                    @Fecha_inicial = N'{0}',
+		                                    @Fecha_final = N'{1}'
+
+                                    SELECT 
+	                                    regionDepartamento.descripcionDepartamento_RegionDepartamento, 
+	                                    regionDepartamento.codigoDepartamento_RegionDepartamento,
+	                                    producto.descripcion_Producto,
+	                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
+	                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
+	                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
+	                                    ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                    ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                        FROM   
+                                        AgronetCadenas.Leche.regionDepartamento regionDepartamento 
+                                        INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+	                                    ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                        INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
+	                                    ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+                                        WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '{2}' and '{3}'
+                                        and regionDepartamento.descripcionDepartamento_RegionDepartamento = '{4}'
+
+                                    DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO
+                                "
+                    , parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"), parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"),parameters.departamento);
+
+            DataTable result = adapter.GetDatatable(sql);
+
+            if (parameters.tipo == "tabla")
+            {
+                switch (parameters.id)
+                {
+                    case 1:
+                        Table table = new Table { rows = result };
+                        returnData = (Table)table;
+                        break;
+                }
+            }
+
             if (returnData == null)
             {
                 return NotFound();
             }
+
+
 
             return Ok(returnData);
         }
