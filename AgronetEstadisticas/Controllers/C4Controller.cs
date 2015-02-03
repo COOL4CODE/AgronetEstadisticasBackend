@@ -1240,16 +1240,29 @@ namespace AgronetEstadisticas.Controllers
         {
             Object returnData = null;
             SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesComercio";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
             switch (parameters.tipo)
             {
                 case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[anho].[anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
@@ -1257,10 +1270,40 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            string mdx1 = @"SELECT NON EMPTY NonEmpty({{[Measures].[Balanza Miles Dolares FOB-CIF]}}) ON 0,
+                            NON EMPTY NonEmpty({ @anio }) ON 1 FROM [Agronet Comercio] WHERE {
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[01-Animales vivos]:
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[24-Tabaco sucedáneos del tabaco elaborados],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2905430000 - Manitol.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2905440000 - D-glusitol (sorbitol).],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[3301-Aceites esenciales (desterpenados o no), incluidos los ""concretos"" o ""absolutos"", resinoides; o],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[3501-Caseína, caseinatos y demás derivados de la caseína; colas de caseína.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[3505-Dextrina y demás almidones y féculas modificados (por ejemplo: almidones y féculas pregelatiniz],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3809100000 - Aprestos y productos de acabado a base de materias amiláceas.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3823600000 - Sorbitol, excepto el de la subpartida 29.05.44.00.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4001-Caucho natural, balata, gutapercha, guayule, chicle y gomas naturales análogas, en formas prima],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4101-Cueros y pieles, en bruto, de bovino o de equino (frescos o salados, secos, encalados, piquelad]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4103-Los demás cueros y pieles, en bruto (frescos o salados, secos, encalados, piquelados o conserva],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4401-Leña; madera en plaquitas o partículas, aserrín, desperdicios y desechos, de madera, incluso ag]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4407-Madera aserrada o debastada longitudinalmente, cortada o desenrollada, incluso cepillada, lijad],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5001-Capullos de seda aptos. Paa el devanado.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5003-Desperdicios de seda (incluidos los capullos no aptos para el devanado, desperdicios de hilados],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5101-Lana sin cardar ni peinar.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5103-Desperdicios de lana o de pelo fino u ordinario, incluidos los desperdicios de hilados, excepto],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5201-Algodón sin cardar ni peinar.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5203-Algodón cardado o peinado.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5301-Lino en bruto o trabajado, pero sin hilar, estopas y desperdicios, de lino (incluidos los despe],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5302-Cañamo (cannabis sativa) en bruto o trabajado, pero sin hilar, estopas y desperdicios de cáñamo]};";
+
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Balanza Comercial", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d["anio"]), y = Convert.ToDouble(d["valor"])};
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
@@ -1268,10 +1311,29 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            string mdx1 = @"SELECT NON EMPTY NonEmpty({{[Measures].[Balanza Miles Dolares FOB-CIF]}}) ON 0,
+                            NON EMPTY NonEmpty({ { @anio } * { [Pais].[Pais].[Pais] } }) ON 1 FROM [Agronet Comercio] WHERE {
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[01-Animales vivos]:
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[24-Tabaco sucedáneos del tabaco elaborados],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2905430000 - Manitol.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2905440000 - D-glusitol (sorbitol).],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[3301-Aceites esenciales (desterpenados o no), incluidos los ""concretos"" o ""absolutos"", resinoides; o],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[3501-Caseína, caseinatos y demás derivados de la caseína; colas de caseína.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[3505-Dextrina y demás almidones y féculas modificados (por ejemplo: almidones y féculas pregelatiniz],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3809100000 - Aprestos y productos de acabado a base de materias amiláceas.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3823600000 - Sorbitol, excepto el de la subpartida 29.05.44.00.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4001-Caucho natural, balata, gutapercha, guayule, chicle y gomas naturales análogas, en formas prima],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4101-Cueros y pieles, en bruto, de bovino o de equino (frescos o salados, secos, encalados, piquelad]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4103-Los demás cueros y pieles, en bruto (frescos o salados, secos, encalados, piquelados o conserva],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4401-Leña; madera en plaquitas o partículas, aserrín, desperdicios y desechos, de madera, incluso ag]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[4407-Madera aserrada o debastada longitudinalmente, cortada o desenrollada, incluso cepillada, lijad],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5001-Capullos de seda aptos. Paa el devanado.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5003-Desperdicios de seda (incluidos los capullos no aptos para el devanado, desperdicios de hilados],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5101-Lana sin cardar ni peinar.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5103-Desperdicios de lana o de pelo fino u ordinario, incluidos los desperdicios de hilados, excepto],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5201-Algodón sin cardar ni peinar.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5203-Algodón cardado o peinado.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5301-Lino en bruto o trabajado, pero sin hilar, estopas y desperdicios, de lino (incluidos los despe],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5302-Cañamo (cannabis sativa) en bruto o trabajado, pero sin hilar, estopas y desperdicios de cáñamo]};";
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
                             break;
                     }
                     break;
@@ -1290,16 +1352,29 @@ namespace AgronetEstadisticas.Controllers
         {
             Object returnData = null;
             SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesComercio";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
             switch (parameters.tipo)
             {
                 case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[anho].[anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
@@ -1307,10 +1382,41 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            string mdx1 = @"SELECT {[Measures].[Balanza Miles Dolares FOB-CIF]} ON COLUMNS,
+                            NON EMPTY { @anio } ON ROWS
+                            FROM [Agronet Comercio]
+                            WHERE {{[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[0101101000 - Caballos reproductores de raza pura, vivos.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2403990000 - Los demás tabacos elaborados, extractos y jugos de tabaco.]},
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2905430000 - Manitol.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2905440000 - D-glusitol (sorbitol).],
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3301110000 - Aceites esenciales de bergamota.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3301909000 - Los demás aceites esenciales (desterpenados o no).]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3501100000 - Caseina.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3505200000 - Colas a base de almidón, de fécula, de dextrina o de demás almidónes o féculas modificados.]},
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3809100000 - Aprestos y productos de acabado a base de materias amiláceas.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3823600000 - Sorbitol, excepto el de la subpartida 29.05.44.00.],
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4001100000 - Látex de caucho natural, incluso prevulcanizado.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4001300000 - Balata, gutapercha, guayule, chicle y gomas naturales análogas.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4101100000 - Cueros y pieles enteras de bovino con un peso unitario inferior o igual a 8 kg. para  los  secos, a 10 kg. para los salados secos y a 14 kg. para los frescos, salados verdes (humedos) o conservados de otro modo.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4103900000 - Los demás cueros y pieles, en bruto (frescos o salados, secos, encalados, piquelados o conservados de otro modo, pero sin curtir, apergaminar ni preparar de otra forma), incluso depilados o divid., excep. las pieles y partes de pieles de aves, con plumas.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4301000000 - Peletería en bruto (incluidas las cabezas, colas, patas y trozos utilizables en peletería), excepto las pieles en bruto de las partidas 41.01, 41.02 o 41.03.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4301900000 - Cabezas, colas, patas y trozos utilizables en peletería.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4401100000 - Leña.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4407990090 - Las demás maderas desbastadas longitudinalmente, incluso cepillada, lijada o unida por entalladuras multiples, de espesor superior a 6 mm.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5001000000 - Capullos de seda aptos para el devanado.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5003900000 - Los demás desperdicios de seda.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5101110000 - Lana esquilada sin cardar ni peinar, sucia o lavada en vivo.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5103300000 - Desperdicios de pelo ordinario, incluidos los desperdicios de hilados, pero con exclusión de las hilachas.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5201000010 - Algodón, sin cardar ni peinar de fibra larga de longitud superior a 28.5 mm.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5203000000 - Algodón cardado o peinado.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5301100000 - Lino en bruto o enriado.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5302902000 - Estopas y desperdicios de cáñamo (incluidos los desperdicios de hilados y las hilachas).]}}
+                            -{[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[0901110000 - Café sin tostar, sin descafeinar.],[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[0901119000 - Los demás cafés sin tostar, sin descafeinar.]}";
+
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Balanza Comercial", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d["anio"]), y = Convert.ToDouble(d["valor"])};
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
@@ -1318,10 +1424,30 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            string mdx1 = @"SELECT {[Measures].[Balanza Miles Dolares FOB-CIF]} ON COLUMNS,
+                            NON EMPTY { @anio } * {[Pais].[Pais].[Pais]} ON ROWS
+                            FROM [Agronet Comercio]
+                            WHERE {{[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[0101101000 - Caballos reproductores de raza pura, vivos.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2403990000 - Los demás tabacos elaborados, extractos y jugos de tabaco.]},
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2905430000 - Manitol.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[2905440000 - D-glusitol (sorbitol).],
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3301110000 - Aceites esenciales de bergamota.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3301909000 - Los demás aceites esenciales (desterpenados o no).]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3501100000 - Caseina.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3505200000 - Colas a base de almidón, de fécula, de dextrina o de demás almidónes o féculas modificados.]},
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3809100000 - Aprestos y productos de acabado a base de materias amiláceas.],
+                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[3823600000 - Sorbitol, excepto el de la subpartida 29.05.44.00.],
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4001100000 - Látex de caucho natural, incluso prevulcanizado.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4001300000 - Balata, gutapercha, guayule, chicle y gomas naturales análogas.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4101100000 - Cueros y pieles enteras de bovino con un peso unitario inferior o igual a 8 kg. para  los  secos, a 10 kg. para los salados secos y a 14 kg. para los frescos, salados verdes (humedos) o conservados de otro modo.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4103900000 - Los demás cueros y pieles, en bruto (frescos o salados, secos, encalados, piquelados o conservados de otro modo, pero sin curtir, apergaminar ni preparar de otra forma), incluso depilados o divid., excep. las pieles y partes de pieles de aves, con plumas.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4301000000 - Peletería en bruto (incluidas las cabezas, colas, patas y trozos utilizables en peletería), excepto las pieles en bruto de las partidas 41.01, 41.02 o 41.03.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4301900000 - Cabezas, colas, patas y trozos utilizables en peletería.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4401100000 - Leña.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[4407990090 - Las demás maderas desbastadas longitudinalmente, incluso cepillada, lijada o unida por entalladuras multiples, de espesor superior a 6 mm.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5001000000 - Capullos de seda aptos para el devanado.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5003900000 - Los demás desperdicios de seda.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5101110000 - Lana esquilada sin cardar ni peinar, sucia o lavada en vivo.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5103300000 - Desperdicios de pelo ordinario, incluidos los desperdicios de hilados, pero con exclusión de las hilachas.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5201000010 - Algodón, sin cardar ni peinar de fibra larga de longitud superior a 28.5 mm.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5203000000 - Algodón cardado o peinado.]},
+                            {[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5301100000 - Lino en bruto o enriado.]:[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[5302902000 - Estopas y desperdicios de cáñamo (incluidos los desperdicios de hilados y las hilachas).]}}
+                            -{[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[0901110000 - Café sin tostar, sin descafeinar.],[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida10 Dig Union].&[0901119000 - Los demás cafés sin tostar, sin descafeinar.]}";
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
                             break;
                     }
                     break;
@@ -1340,16 +1466,61 @@ namespace AgronetEstadisticas.Controllers
         {
             Object returnData = null;
             SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesComercio";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
             switch (parameters.tipo)
             {
                 case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
                     switch (parameters.id)
                     {
                         case 1:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[anho].[anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                         case 2:
+                            parameter.name = "pais";
+                            mdxParams.Add(new MdxParameter("@pais", "[Pais].[Pais].[Pais]"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            string mdx2 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @pais }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data2 = adapter.GetDataTable(connectionName, mdx2, mdxParams);
+                            foreach (var p in (from p in data2.AsEnumerable()
+                                               select p["pais"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                         case 3:
+                            parameter.name = "producto";
+                            mdxParams.Add(new MdxParameter("@pais", String.Format("[Pais].[Pais].[{0}]", parameters.pais)));
+                            mdxParams.Add(new MdxParameter("@producto", "[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            mdxParams.Add(new MdxParameter("~[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]", "producto"));
+                            string mdx3 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @producto }) ON 1 FROM [Agronet Comercio] WHERE { @pais };";
+
+                            DataTable data3 = adapter.GetDataTable(connectionName, mdx3, mdxParams);
+                            foreach (var p in (from p in data3.AsEnumerable()
+                                               select p["producto"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
@@ -1357,10 +1528,31 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            mdxParams.Add(new MdxParameter("@pais", String.Format("[Pais].[Pais].[{0}]", parameters.pais)));
+                            string mdx1 = @"SELECT {[Measures].[Balanza Miles Dolares FOB-CIF]} ON 0, NON EMPTY { @anio } ON 1
+                            FROM [Agronet Comercio] WHERE { @pais } * {";
+                            for (int i = 0; i < parameters.producto.Count; i++)
+                            {
+                                mdx1 += (i + 1 == parameters.producto.Count) ? "@producto" + i : "@producto" + i + ",";
+                                mdxParams.Add(new MdxParameter("@producto" + i, String.Format("[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union].&[{0}]", parameters.producto[i])));
+                            }
+                            mdx1 += "}";
+
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Balanza Comercial", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d["anio"]), y = Convert.ToDouble(d["valor"])};
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
@@ -1368,10 +1560,22 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Mes].[Mes]", "mes"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            mdxParams.Add(new MdxParameter("~[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]", "producto"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            mdxParams.Add(new MdxParameter("@pais", String.Format("[Pais].[Pais].[{0}]", parameters.pais)));
+                            string mdx1 = @"SELECT {[Measures].[Balanza Miles Dolares FOB-CIF]} ON 0,
+                            NON EMPTY { @anio } * {[Periodo].[Mes].[Mes]} * { @pais } * {";
+                            for (int i = 0; i < parameters.producto.Count; i++)
+                            {
+                                mdx1 += (i + 1 == parameters.producto.Count) ? "@producto" + i : "@producto" + i + ",";
+                                mdxParams.Add(new MdxParameter("@producto" + i, String.Format("[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union].&[{0}]", parameters.producto[i])));
+                            }
+                            mdx1 += "} ON 1 FROM [Agronet Comercio];";
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
                             break;
                     }
                     break;
@@ -1390,16 +1594,45 @@ namespace AgronetEstadisticas.Controllers
         {
             Object returnData = null;
             SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesComercio";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
             switch (parameters.tipo)
             {
                 case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
                     switch (parameters.id)
                     {
                         case 1:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[anho].[anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                         case 2:
-                            break;
-                        case 3:
+                            parameter.name = "producto";
+                            mdxParams.Add(new MdxParameter("@producto", "[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]"));
+                            mdxParams.Add(new MdxParameter("~[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]", "producto"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            string mdx3 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @producto }) ON 1 FROM [Agronet Comercio] WHERE { @anio };";
+
+                            DataTable data3 = adapter.GetDataTable(connectionName, mdx3, mdxParams);
+                            foreach (var p in (from p in data3.AsEnumerable()
+                                               select p["producto"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
@@ -1407,10 +1640,30 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            string mdx1 = @"SELECT {[Measures].[Balanza Miles Dolares FOB-CIF]} ON 0, NON EMPTY { @anio } ON 1
+                            FROM [Agronet Comercio] WHERE {";
+                            for (int i = 0; i < parameters.producto.Count; i++)
+                            {
+                                mdx1 += (i + 1 == parameters.producto.Count) ? "@producto" + i : "@producto" + i + ",";
+                                mdxParams.Add(new MdxParameter("@producto" + i, String.Format("[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union].&[{0}]", parameters.producto[i])));
+                            }
+                            mdx1 += "}";
+
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Balanza Comercial", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d["anio"]), y = Convert.ToDouble(d["valor"]) };
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
@@ -1418,10 +1671,21 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Mes].[Mes]", "mes"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            mdxParams.Add(new MdxParameter("~[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]", "producto"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            string mdx1 = @"SELECT {[Measures].[Balanza Miles Dolares FOB-CIF]} ON 0,
+                            NON EMPTY { @anio } * {[Periodo].[Mes].[Mes]} * {[Pais].[Pais].[Pais]} * {";
+                            for (int i = 0; i < parameters.producto.Count; i++)
+                            {
+                                mdx1 += (i + 1 == parameters.producto.Count) ? "@producto" + i : "@producto" + i + ",";
+                                mdxParams.Add(new MdxParameter("@producto" + i, String.Format("[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union].&[{0}]", parameters.producto[i])));
+                            }
+                            mdx1 += "} ON 1 FROM [Agronet Comercio];";
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
                             break;
                     }
                     break;
@@ -1440,39 +1704,103 @@ namespace AgronetEstadisticas.Controllers
         {
             Object returnData = null;
             SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesComercio";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
             switch (parameters.tipo)
             {
                 case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
-                    }
-                    break;
-                case "grafico":
-                    switch (parameters.id)
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[anho].[anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
                 case "tabla":
+                    mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                    mdxParams.Add(new MdxParameter("~[Measures].[Balanza Miles Dolares FOB-CIF]", "valor"));
+                    mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                    Table table = new Table { rows = new DataTable() };
                     switch (parameters.id)
                     {
-                        case 1:
+                        case 1:                            
+                            mdxParams.Add(new MdxParameter("~[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig]", "partida"));
+                            string mdx1 = @"SELECT { [Measures].[Balanza Miles Dolares FOB-CIF] } ON COLUMNS, CROSSJOIN({NONEMPTY({
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5201-Algodón sin cardar ni peinar.],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5202-Desperdicios de algodón (incluidos los desperdicios de hilados y las hilachas).],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5203-Algodón cardado o peinado.]
+                                            })}, { @anio } ) ON ROWS FROM [Agronet Comercio]";
+                            table.rows = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            returnData = (Table)table;
                             break;
                         case 2:
+                            mdxParams.Add(new MdxParameter("~[Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo]", "partida"));
+                            string mdx2 = @"SELECT { [Measures].[Balanza Miles Dolares FOB-CIF] } ON COLUMNS, CROSSJOIN({NONEMPTY({
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[01-Animales vivos],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[02-Carnes y despojos comestibles],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[03-Pescados y crustáceos, moluscos e invertebrados acuáticos],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[04-Leche y productos lácteos, huevos, miel],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[05-Demás productos de origen animal]
+                                            })}, { @anio } ) ON ROWS FROM [Agronet Comercio]";
+                            table.rows = adapter.GetDataTable(connectionName, mdx2, mdxParams);
+                            returnData = (Table)table;
                             break;
                         case 3:
+                            mdxParams.Add(new MdxParameter("~[Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo]", "partida"));
+                            string mdx3 = @"SELECT { [Measures].[Balanza Miles Dolares FOB-CIF] } ON COLUMNS, CROSSJOIN({NONEMPTY({
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[15-Grasas y aceites animales o vegetales]
+                                            })}, { @anio } ) ON ROWS FROM [Agronet Comercio]";
+                            table.rows = adapter.GetDataTable(connectionName, mdx3, mdxParams);
+                            returnData = (Table)table;
                             break;
+                        case 4:
+                            mdxParams.Add(new MdxParameter("~[Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo]", "partida"));
+                            string mdx4 = @"SELECT { [Measures].[Balanza Miles Dolares FOB-CIF] } ON COLUMNS, CROSSJOIN({NONEMPTY({
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[15-Grasas y aceites animales o vegetales],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[16-Preparaciones de carne, pescado, crustáceos, moluscos],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[17-Azucares y artículos confitería],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[18-Cacao y sus preparaciones],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[19-Preparaciones a base de cereal, harina, leche; pastelería],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[20-Preparaciones de legumbres u hortalizas, frutos, otras],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[21-Preparaciones alimenticias diversas],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[22-Bebidas, líquidos alcohólicos y vinagre],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[23-Residuos industrias alimentarias. Alimentos para animales],
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[24-Tabaco sucedáneos del tabaco elaborados]
+                                            })}, { @anio } ) ON ROWS FROM [Agronet Comercio]";
+                            table.rows = adapter.GetDataTable(connectionName, mdx4, mdxParams);
+                            returnData = (Table)table;
+                            break;
+                        case 5:
+                            mdxParams.Add(new MdxParameter("~[Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo]", "partida"));
+                            string mdx5 = @"SELECT { [Measures].[Balanza Miles Dolares FOB-CIF] } ON COLUMNS, CROSSJOIN({NONEMPTY({
+                                            [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[06-Plantas vivas y productos de la floricultura],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[07-Legumbres y hortalizas, plantas, raíces y tubérculos],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[08-Frutos comestibles, cortezas de agrios o melones],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[09-Café, té, yerbamate y especias],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[10-Cereales],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[11-Productos de molinería, malta, almidón y fécula],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[12-Semillas y frutos oleaginosos, forrajes],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[13-Gomas, resinas, y demás jugos y extractos vegetales],
+		                                    [Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo].&[14-Materias trenzables y demás productos vegetales]
+                                            })}, { @anio } ) ON ROWS FROM [Agronet Comercio]";
+                            table.rows = adapter.GetDataTable(connectionName, mdx5, mdxParams);
+                            returnData = (Table)table;
+                            break;
+                        
                     }
                     break;
             }
@@ -1490,16 +1818,61 @@ namespace AgronetEstadisticas.Controllers
         {
             Object returnData = null;
             SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesComercio";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
             switch (parameters.tipo)
             {
                 case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
                     switch (parameters.id)
                     {
                         case 1:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[anho].[anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                         case 2:
+                            parameter.name = "pais";
+                            mdxParams.Add(new MdxParameter("@pais", "[Pais].[Pais].[Pais]"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            string mdx2 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @pais }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data2 = adapter.GetDataTable(connectionName, mdx2, mdxParams);
+                            foreach (var p in (from p in data2.AsEnumerable()
+                                               select p["pais"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                         case 3:
+                            parameter.name = "producto";
+                            mdxParams.Add(new MdxParameter("@pais", String.Format("[Pais].[Pais].[{0}]", parameters.pais)));
+                            mdxParams.Add(new MdxParameter("@producto", "[Producto].[Producto General].[Producto General]"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            mdxParams.Add(new MdxParameter("~[Producto].[Producto General].[Producto General]", "producto"));
+                            string mdx3 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @producto }) ON 1 FROM [Agronet Comercio] WHERE { @pais };";
+
+                            DataTable data3 = adapter.GetDataTable(connectionName, mdx3, mdxParams);
+                            foreach (var p in (from p in data3.AsEnumerable()
+                                               select p["producto"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
@@ -1507,10 +1880,27 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Measures].[Ton Netas Expo]", "vol_exportaciones"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Ton Netas Impo]", "vol_importaciones"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            mdxParams.Add(new MdxParameter("@pais", String.Format("[Pais].[Pais].[{0}]", parameters.pais)));
+                            mdxParams.Add(new MdxParameter("@producto", "[Producto].[Producto General].[Producto General]"));
+                            string mdx1 = @"SELECT {[Measures].[Ton Netas Expo],[Measures].[Ton Netas Impo]} ON 0, NON EMPTY { @anio } ON 1 FROM [Agronet Comercio] WHERE { @pais } * { @producto };";
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Índice BCR", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            {
+                                var a = Convert.ToDouble(d["vol_exportaciones"]) - Convert.ToDouble(d["vol_importaciones"]);
+                                var b = Convert.ToDouble(d["vol_exportaciones"]) + Convert.ToDouble(d["vol_importaciones"]);
+                                Data data1 = new Data { name = Convert.ToString(d["anio"]), y = a/b };
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
@@ -1518,10 +1908,15 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Measures].[Ton Netas Expo]", "vol_exportaciones"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Ton Netas Impo]", "vol_importaciones"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            mdxParams.Add(new MdxParameter("@pais", String.Format("[Pais].[Pais].[{0}]", parameters.pais)));
+                            mdxParams.Add(new MdxParameter("@producto", "[Producto].[Producto General].[Producto General]"));
+                            string mdx1 = @"SELECT {[Measures].[Ton Netas Expo],[Measures].[Ton Netas Impo]} ON 0, NON EMPTY { @anio } ON 1 FROM [Agronet Comercio] WHERE { @pais } * { @producto };";
+
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
                             break;
                     }
                     break;

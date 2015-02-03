@@ -10,7 +10,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Data;
-using Microsoft.AnalysisServices.AdomdClient;
+using MdxClient;
 
 using AgronetEstadisticas.Models.parametersBinding;
 using AgronetEstadisticas.Adapter;
@@ -25,6 +25,77 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport601(report601 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[Anho].[Anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Anho].[Anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Credito DW];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            mdxParams.Add(new MdxParameter("~[Measures].[Valor Millones Pesos]", "valor"));
+                            mdxParams.Add(new MdxParameter("~[Geografia].[Departamento].[Departamento]", "departamento"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[Anho].&[{0}]:[Periodo].[Anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            
+                            string mdx1 = @"SELECT {[Measures].[Valor Millones Pesos]} ON 0,
+                            NON EMPTY TopCount({[Geografia].[Departamento].[Departamento]},10,[Measures].[Valor Millones Pesos])  ON 1
+                            FROM [Agronet Credito DW] WHERE [Intermediario Financiero].[Intermediario Financiero].&[40] * { @anio }";
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Participación Acumulada por Departamento", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d["departamento"]), y = Convert.ToDouble(d["valor"]) };
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+
+                            returnData = (Chart)chart1;
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Anho].[Anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Valor Millones Pesos]", "valor"));
+                            mdxParams.Add(new MdxParameter("~[Geografia].[Departamento].[Departamento]", "departamento"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[Anho].&[{0}]:[Periodo].[Anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            
+                            string mdx1 = @"SELECT {[Measures].[Valor Millones Pesos]} ON 0,
+                            NON EMPTY TopCount({[Geografia].[Departamento].[Departamento]},10,[Measures].[Valor Millones Pesos]) * { @anio } ON 1
+                            FROM [Agronet Credito DW] WHERE [Intermediario Financiero].[Intermediario Financiero].&[40]";
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
@@ -37,6 +108,81 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport602(report602 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[Anho].[Anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Anho].[Anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Credito DW];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            mdxParams.Add(new MdxParameter("~[Measures].[Valor Millones Pesos]", "valor"));
+                            mdxParams.Add(new MdxParameter("~[Geografia].[Departamento].[Departamento]", "departamento"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[Anho].&[{0}]:[Periodo].[Anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+
+                            string mdx1 = @"SELECT NON EMPTY {[Measures].[Valor Millones Pesos]} ON 0,
+                            NON EMPTY TopCount({[Geografia].[Departamento].[Departamento]},10,[Measures].[Valor Millones Pesos]) ON 1
+                            FROM [Agronet Credito DW]
+                            WHERE {[Intermediario Financiero].[Intermediario Financiero].&[40]} * 
+                            {[Tipo Productor].[Tipo de Productor].[Descripcion Min Tipo Productor].&[Pequeños Productores]} * { @anio }";
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Participación Acumulada por Departamento", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d["departamento"]), y = Convert.ToDouble(d["valor"]) };
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+
+                            returnData = (Chart)chart1;
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Anho].[Anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Valor Millones Pesos]", "valor"));
+                            mdxParams.Add(new MdxParameter("~[Geografia].[Departamento].[Departamento]", "departamento"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[Anho].&[{0}]:[Periodo].[Anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            
+                            string mdx1 = @"SELECT NON EMPTY {[Measures].[Valor Millones Pesos]} ON 0,
+                            NON EMPTY TopCount({[Geografia].[Departamento].[Departamento]},10,[Measures].[Valor Millones Pesos]) * { @anio } ON 1
+                            FROM [Agronet Credito DW]
+                            WHERE {[Intermediario Financiero].[Intermediario Financiero].&[40]} * 
+                            {[Tipo Productor].[Tipo de Productor].[Descripcion Min Tipo Productor].&[Pequeños Productores]}";
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
@@ -49,6 +195,47 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport603(report603 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[Anho].[Anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Anho].[Anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Credito DW];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
@@ -61,6 +248,48 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport604(report604 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
@@ -73,6 +302,48 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport605(report605 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
@@ -85,6 +356,48 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport606(report606 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
@@ -97,6 +410,48 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport607(report607 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
@@ -109,6 +464,48 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport608(report608 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
@@ -121,6 +518,48 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport609(report609 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesCredito";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
