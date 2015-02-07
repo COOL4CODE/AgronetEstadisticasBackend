@@ -241,7 +241,7 @@ namespace AgronetEstadisticas.Controllers
                             mdxParams.Add(new MdxParameter("~[Rubro].[Linea].[Linea]", "linea"));
                             string mdx3 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @linea }) ON 1 FROM [Agronet Credito DW];";
 
-                            DataTable data3 = adapter.GetDataTable(connectionName, mdx2, mdxParams);
+                            DataTable data3 = adapter.GetDataTable(connectionName, mdx3, mdxParams);
                             foreach (var p in (from p in data3.AsEnumerable()
                                                select p["linea"]))
                             {
@@ -256,7 +256,26 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Anho].[Anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Valor Millones Pesos]", "valor"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Numero Créditos]", "creditos"));
+                            mdxParams.Add(new MdxParameter("~[Rubro].[Linea].[Linea]", "linea"));
+                            mdxParams.Add(new MdxParameter("~[Rubro].[Grupo].[Grupo]", "grupo"));
+                            mdxParams.Add(new MdxParameter("~[Rubro].[Subgrupo].[Subgrupo]", "subgrupo"));
+                            mdxParams.Add(new MdxParameter("~[Rubro].[Rubro].[Rubro]", "rubro"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[Anho].&[{0}]:[Periodo].[Anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            mdxParams.Add(new MdxParameter("@linea", String.Format("[Rubro].[Linea].[{0}]", parameters.linea)));
+                            mdxParams.Add(new MdxParameter("@departamento", String.Format("[Geografia].[Departamento].[{0}]", parameters.departamento)));
+                            
+                            String mdx1 = @"SELECT NON EMPTY {[Measures].[Numero Créditos], [Measures].[Valor Millones Pesos]} ON 0, 
+                                            NonEmpty({ @linea }* 
+                                            { [Rubro].[Grupo].[Grupo] }* 
+                                            { [Rubro].[Subgrupo].[Subgrupo] }* 
+                                            { [Rubro].[Rubro].[Rubro] }* 
+                                            { @anio }) ON 1 
+                                            FROM [Agronet Credito DW] WHERE { @departamento };";
 
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
                             break;
                     }
                     break;
@@ -285,10 +304,19 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[Anho].[Anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Anho].[Anho]", "anio"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Credito DW];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
@@ -296,10 +324,25 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Measures].[Valor Millones Pesos]", "valor"));
+                            mdxParams.Add(new MdxParameter("~[Geografia].[Departamento].[Departamento]", "departamento"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[Anho].&[{0}]:[Periodo].[Anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+
+                            string mdx1 = @"SELECT {[Measures].[Valor Millones Pesos]} ON 0,
+                            NON EMPTY {ORDER([Geografia].[Departamento].[Departamento],[Measures].[Valor Millones Pesos],DESC)} ON 1 
+                            FROM [Agronet Credito DW] WHERE {[Tipo Credito].[Tipo Credito].&[A]} * { @anio }";
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Participación Acumulada por Departamento", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d["departamento"]), y = Convert.ToDouble(d["valor"]) };
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
@@ -307,10 +350,15 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[Anho].[Anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Valor Millones Pesos]", "valor"));
+                            mdxParams.Add(new MdxParameter("~[Geografia].[Departamento].[Departamento]", "departamento"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[Anho].&[{0}]:[Periodo].[Anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+
+                            string mdx1 = @"SELECT {[Measures].[Valor Millones Pesos]} ON 0,
+                            NON EMPTY {ORDER([Geografia].[Departamento].[Departamento],[Measures].[Valor Millones Pesos],DESC)} * { @anio } ON 1
+                            FROM [Agronet Credito DW] WHERE [Tipo Credito].[Tipo Credito].&[A]";
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
                             break;
                     }
                     break;
