@@ -221,8 +221,34 @@ namespace AgronetEstadisticas.Controllers
                             returnData = (Parameter)parameter;
                             break;
                         case 2:
+                            parameter.name = "departamento";
+                            mdxParams.Add(new MdxParameter("@departamento", "[Geografia].[Departamento].[Departamento]"));
+                            mdxParams.Add(new MdxParameter("~[Geografia].[Departamento].[Departamento]", "departamento"));
+                            string mdx2 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @departamento }) ON 1 FROM [Agronet Credito DW];";
+
+                            DataTable data2 = adapter.GetDataTable(connectionName, mdx2, mdxParams);
+                            foreach (var p in (from p in data2.AsEnumerable()
+                                               select p["departamento"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                         case 3:
+                            parameter.name = "linea";
+                            mdxParams.Add(new MdxParameter("@linea", "[Rubro].[Linea].[Linea]"));
+                            mdxParams.Add(new MdxParameter("~[Rubro].[Linea].[Linea]", "linea"));
+                            string mdx3 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @linea }) ON 1 FROM [Agronet Credito DW];";
+
+                            DataTable data3 = adapter.GetDataTable(connectionName, mdx2, mdxParams);
+                            foreach (var p in (from p in data3.AsEnumerable()
+                                               select p["linea"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
