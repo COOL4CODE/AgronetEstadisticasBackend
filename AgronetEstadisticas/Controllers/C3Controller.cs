@@ -23,7 +23,41 @@ namespace AgronetEstadisticas.Controllers
         [Route("api/Report/301")]
         public IHttpActionResult postReport301(report301 parameters)
         {
-            string sql = String.Format(@"SELECT variableCalidad.descripcion_VariableCalidad,
+
+            Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            String SQLquery1 = @"SELECT DISTINCT
+                                YEAR(calidadRegional.fecha_CalidadRegional) as anios
+                                    FROM   
+                                (AgronetCadenas.compraLeche.calidadRegional calidadRegional 
+                                INNER JOIN AgronetCadenas.Leche.region region ON calidadRegional.codigoRegion_CalidadRegional=region.codigo_Region) 
+                                INNER JOIN AgronetCadenas.Leche.variableCalidad variableCalidad ON calidadRegional.codigoVariableCalidad_CalidadRegional=variableCalidad.codigo_VariableCalidad
+                                ORDER BY
+                                YEAR(calidadRegional.fecha_CalidadRegional)";
+
+                            DataTable data = adapter.GetDatatable(SQLquery1);
+                            Parameter param = new Parameter { name = "anios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in data.AsEnumerable() select p[@"anios"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param;
+
+                            break;
+                      
+                    }
+                    break;
+                case "grafico":
+
+                    string sql = String.Format(@"SELECT variableCalidad.descripcion_VariableCalidad,
                                             region.descripcion_Region,
                                             calidadRegional.fecha_CalidadRegional, 
                                             calidadRegional.valor_CalidadRegional, 
@@ -33,31 +67,10 @@ namespace AgronetEstadisticas.Controllers
                                             WHERE calidadRegional.fecha_CalidadRegional BETWEEN '{0}' AND '{1}'
                                             ORDER BY  variableCalidad.descripcion_VariableCalidad, 
                                             region.descripcion_Region,
-                                            calidadRegional.fecha_CalidadRegional DESC", parameters.anio_inicial.ToString("yyyy-MM-dd"), parameters.anio_final.ToString("yyyy-MM-dd"));
+                                            calidadRegional.fecha_CalidadRegional DESC", parameters.anio_inicial, parameters.anio_final);
 
-            var adapter = new SQLAdapter();
-            var results = adapter.GetDatatable(sql);
-            Object returnData = null;
+                    DataTable results = adapter.GetDatatable(sql);
 
-            if (results != null)
-            {
-                if (parameters.tipo == "parametro")
-                {
-                    var queryParameters = from p in results.AsEnumerable()
-                                          orderby p["fecha_CalidadRegional"]
-                                          select p["fecha_CalidadRegional"];
-
-
-                    ParameterData param1 = new ParameterData { name = "anio_inicial", value = String.Format("{0:yyyy-MM-dd}", queryParameters.Min()) };
-                    ParameterData param2 = new ParameterData { name = "anio_final", value = String.Format("{0:yyyy-MM-dd}", queryParameters.Max()) };
-                    Parameter parameter = new Parameter { name = "rango_fechas", data = new List<ParameterData>() };
-                    parameter.data.Add(param1);
-                    parameter.data.Add(param2);
-
-                    returnData = (Parameter)parameter;
-                }
-                else if (parameters.tipo == "grafico")
-                {
                     var queryCharts = from r in results.AsEnumerable()
                                       group r by r["descripcion_VariableCalidad"] into chartGroup
                                       from seriesGroup in
@@ -89,19 +102,42 @@ namespace AgronetEstadisticas.Controllers
                         }
                         i++;
                     }
-                }
-                else if (parameters.tipo == "tabla")
-                {
-                    Table table = new Table { rows = adapter.GetDatatable(sql) };
+
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                             string sqlTable= String.Format(@"SELECT variableCalidad.descripcion_VariableCalidad,
+                                            region.descripcion_Region,
+                                            calidadRegional.fecha_CalidadRegional, 
+                                            calidadRegional.valor_CalidadRegional, 
+                                            calidadRegional.codigoVariableCalidad_CalidadRegional
+                                            FROM (AgronetCadenas.compraLeche.calidadRegional calidadRegional INNER JOIN AgronetCadenas.Leche.region region ON calidadRegional.codigoRegion_CalidadRegional = region.codigo_Region)
+                                            INNER JOIN AgronetCadenas.Leche.variableCalidad variableCalidad ON calidadRegional.codigoVariableCalidad_CalidadRegional=variableCalidad.codigo_VariableCalidad
+                                            WHERE calidadRegional.fecha_CalidadRegional BETWEEN '{0}' AND '{1}'
+                                            ORDER BY  variableCalidad.descripcion_VariableCalidad, 
+                                            region.descripcion_Region,
+                                            calidadRegional.fecha_CalidadRegional DESC", parameters.anio_inicial, parameters.anio_final);
+
+                    DataTable tableResults = adapter.GetDatatable(sqlTable);
+                    Table table = new Table { rows = tableResults};
                     returnData = (Table)table;
-                }
+
+                            break;
+                        
+                    }
+                    break;
             }
-            else
+
+            if (returnData == null)
             {
                 return NotFound();
             }
 
             return Ok(returnData);
+
         }
 
         [Route("api/Report/302")]
