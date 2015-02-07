@@ -171,7 +171,7 @@ namespace AgronetEstadisticas.Controllers
                     break;
                 case "grafico":
 
-                    string sqlGrafico = String.Format(@"create table  #SP_PRECIOS_LECHE_REGION (
+                    string sqlChart = String.Format(@"create table  #SP_PRECIOS_LECHE_REGION (
 	                                                        fecha date, 
 	                                                        codigoRegion int,
 	                                                        precio int,
@@ -198,7 +198,7 @@ namespace AgronetEstadisticas.Controllers
                                                         parameters.fecha_inicial,parameters.fecha_final,
                                                         parameters.fecha_inicial,parameters.fecha_final
                                                         );
-                            DataTable datatable = adapter.GetDatatable(sqlGrafico);
+                            DataTable datatable = adapter.GetDatatable(sqlChart);
                             var dataGroups = from r in datatable.AsEnumerable()
                                              group r by r["descripcion_Region"] into seriesGroup
                                              select seriesGroup;
@@ -247,14 +247,45 @@ namespace AgronetEstadisticas.Controllers
                     }
                     break;
                 case "tabla":
+
+                    string sqlTable = String.Format(@"create table  #SP_PRECIOS_LECHE_REGION (
+	                                                        fecha date, 
+	                                                        codigoRegion int,
+	                                                        precio int,
+	                                                        volumen int,
+	                                                        variacionPrecio float,
+	                                                        variacionVolumen float
+                                                        )
+                                                        insert into #SP_PRECIOS_LECHE_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_REGION]
+		                                                        @Fecha_inicial = N'{0}-01-01',
+		                                                        @Fecha_final = N'{1}-01-01'
+
+                                                        SELECT 
+	                                                        region.descripcion_Region, 
+	                                                        #SP_PRECIOS_LECHE_REGION.fecha,
+	                                                        #SP_PRECIOS_LECHE_REGION.precio,
+	                                                        #SP_PRECIOS_LECHE_REGION.volumen,
+	                                                        ISNULL(#SP_PRECIOS_LECHE_REGION.variacionPrecio,0) as variacionPrecio,
+	                                                        ISNULL(#SP_PRECIOS_LECHE_REGION.variacionVolumen,0) as variacionVolumen
+                                                         FROM   AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_REGION 
+                                                         ON #SP_PRECIOS_LECHE_REGION.codigoRegion = region.codigo_Region
+                                                         WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}-01-01' and '{3}-01-01'
+
+                                                        DROP TABLE #SP_PRECIOS_LECHE_REGION",
+                                                        parameters.fecha_inicial,parameters.fecha_final,
+                                                        parameters.fecha_inicial,parameters.fecha_final
+                                                        );
+                            DataTable datatable2 = adapter.GetDatatable(sqlTable);
+
                     switch (parameters.id)
                     {
                         case 1:
+
+                            Table table = new Table { rows = datatable2 };
+                            returnData = (Table)table;
+
                             break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
+                        
                     }
                     break;
             }
