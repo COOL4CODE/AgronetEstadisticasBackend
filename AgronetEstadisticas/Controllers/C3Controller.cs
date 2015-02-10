@@ -327,6 +327,38 @@ namespace AgronetEstadisticas.Controllers
                             returnData = (Parameter)param;
 
                             break;
+                        case 2:
+
+                            string sqlp2 = @"create table  #SP_PRECIOS_LECHE_DEPARTAMENTO(
+	                                        fecha date,
+	                                        codigoDepartamento int,
+	                                        precio int,
+	                                        volumen int,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_LECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_DEPARTAMENTO]
+		                                         @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01', @Fecha_final = N'" + parameters.fecha_final + @"-12-31'
+
+                                        SELECT DISTINCT
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as deptos
+                                         FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_DEPARTAMENTO 
+                                         ON #SP_PRECIOS_LECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                         WHERE #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '"
+                                                                                             + parameters.fecha_final + @"-12-31'
+                                                                                              
+                                       DROP TABLE #SP_PRECIOS_LECHE_DEPARTAMENTO";
+
+                            DataTable datap2 = adapter.GetDatatable(sqlp2);
+                            Parameter paramp2 = new Parameter { name = "departamentos" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"deptos"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                paramp2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)paramp2;
+
+                            break;
                     }
                     break;
                 case "grafico":
@@ -457,6 +489,44 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport304(report304 parameters)
         {
             Object returnData = null;
+            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
