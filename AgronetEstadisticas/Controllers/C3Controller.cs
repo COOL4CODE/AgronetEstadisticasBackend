@@ -489,15 +489,68 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport304(report304 parameters)
         {
             Object returnData = null;
-            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            SQLAdapter adapter = new SQLAdapter();
             switch (parameters.tipo)
             {
                 case "parametro":
                     switch (parameters.id)
                     {
                         case 1:
+                             string sql = @"SELECT DISTINCT
+                                YEAR(calidadRegional.fecha_CalidadRegional) as anios
+                                FROM   
+                                AgronetCadenas.compraLeche.calidadRegional calidadRegional
+                                ORDER BY YEAR(calidadRegional.fecha_CalidadRegional)";
+
+                            DataTable data = adapter.GetDatatable(sql);
+                            Parameter param = new Parameter { name = "anios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in data.AsEnumerable() select p[@"anios"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param;
                             break;
                         case 2:
+                            string sqlp2 = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
+	                                        fecha date,
+	                                        codigoDepartamento int,
+	                                        codigoProducto int,
+	                                        codigoTipoProducto int,
+	                                        producto text,
+	                                        unidadPrecio text,
+	                                        precio int,
+	                                        volumen int,
+	                                        unidadVolumen text,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
+		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
+		                                        @Fecha_final = N'" + parameters.fecha_final+ @"-01-01'
+
+                                        SELECT 
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento
+                                         FROM   
+                                         AgronetCadenas.Leche.regionDepartamento regionDepartamento 
+                                         INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+	                                        ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
+	                                        ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+
+
+                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
+
+                             DataTable datap2 = adapter.GetDatatable(sqlp2);
+                            Parameter paramp2 = new Parameter { name = "departamentos" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"departamento"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                paramp2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)paramp2;        
+
                             break;
                         case 3:
                             break;
