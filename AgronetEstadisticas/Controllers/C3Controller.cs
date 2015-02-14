@@ -460,7 +460,8 @@ namespace AgronetEstadisticas.Controllers
                                         ON #SP_PRECIOS_LECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
                                         WHERE #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '"
                                                                                              + parameters.fecha_final + @"-12-31'
-                                        and regionDepartamento.descripcionDepartamento_RegionDepartamento = IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ") DROP TABLE #SP_PRECIOS_LECHE_DEPARTAMENTO";
+                                        and regionDepartamento.descripcionDepartamento_RegionDepartamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                        DROP TABLE #SP_PRECIOS_LECHE_DEPARTAMENTO";
                             DataTable datatable2 = adapter.GetDatatable(sqlTable);
 
                     switch (parameters.id)
@@ -496,11 +497,10 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                             string sql = @"SELECT DISTINCT
-                                YEAR(calidadRegional.fecha_CalidadRegional) as anios
-                                FROM   
-                                AgronetCadenas.compraLeche.calidadRegional calidadRegional
-                                ORDER BY YEAR(calidadRegional.fecha_CalidadRegional)";
+                            string sql = @"select DISTINCT YEAR(fecha_PrecioDepartamental) 
+                                        from AgronetCadenas.ventaLeche.PrecioDepartamental
+                                        ORDER BY YEAR(fecha_PrecioDepartamental)
+                                        ";
 
                             DataTable data = adapter.GetDatatable(sql);
                             Parameter param = new Parameter { name = "anios" , data = new List<ParameterData>() };
@@ -539,7 +539,6 @@ namespace AgronetEstadisticas.Controllers
 	                                        ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
                                          WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
 
-
                                         DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
 
                              DataTable datap2 = adapter.GetDatatable(sqlp2);
@@ -552,7 +551,367 @@ namespace AgronetEstadisticas.Controllers
                             returnData = (Parameter)paramp2;        
 
                             break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            string sqlTable = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
+	                                        fecha date,
+	                                        codigoDepartamento int,
+	                                        codigoProducto int,
+	                                        codigoTipoProducto int,
+	                                        producto text,
+	                                        unidadPrecio text,
+	                                        precio int,
+	                                        volumen int,
+	                                        unidadVolumen text,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
+		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
+		                                        @Fecha_final = N'" + parameters.fecha_final + @"-01-01'
+
+                                        SELECT 
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento, 
+	                                        regionDepartamento.codigoDepartamento_RegionDepartamento,
+	                                        producto.descripcion_Producto,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
+	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                         FROM   
+                                         AgronetCadenas.Leche.regionDepartamento regionDepartamento 
+                                         INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+	                                        ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
+	                                        ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                        and regionDepartamento.descripcionDepartamento_RegionDepartamento = '" + parameters.departamento + @"'
+                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
+                            DataTable datatable = adapter.GetDatatable(sqlTable);
+                            Table table = new Table { rows = datatable };
+                            returnData = (Table)table;
+
+                            break;
+                    }
+                    break;
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/305")]
+        public IHttpActionResult postReport305(report305 parameters)
+        {
+            Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            string sqlp1 = @"select DISTINCT YEAR(fecha_PrecioDepartamental) as anios
+                                        from AgronetCadenas.ventaLeche.PrecioDepartamental
+                                        ORDER BY YEAR(fecha_PrecioDepartamental)
+                                        ";
+
+                            DataTable datap1 = adapter.GetDatatable(sqlp1);
+                            Parameter param1 = new Parameter { name = "anios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap1.AsEnumerable() select p[@"anios"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
+                            break;
+                        case 2:
+
+                              String sqlp2 = @"SELECT  
+                                            AgronetCadenas.dbo.Departamentos.nombreDepartamento as departamento
+                                            FROM AgronetCadenas.dbo.Departamentos 
+                                            INNER JOIN   Agronetcadenas.ventaLeche.PrecioDepartamental 
+                                            ON Agronetcadenas.dbo.Departamentos.codigoDepartamento = AgronetCadenas.ventaLeche.PrecioDepartamental.codigoDepartamento_PrecioDepartamental 
+                                            GROUP BY AgronetCadenas.dbo.Departamentos.nombreDepartamento, AgronetCadenas.ventaLeche.PrecioDepartamental.codigoDepartamento_PrecioDepartamental
+                                            ORDER BY AgronetCadenas.dbo.Departamentos.nombreDepartamento";
+
+                            DataTable datap2 = adapter.GetDatatable(sqlp2);
+                            Parameter param2 = new Parameter { name = "departamentos" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"departamento"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param2.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param2;
+                            break;
                         case 3:
+
+                            String sqlp3 = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
+	                                        fecha date,
+	                                        codigoDepartamento int,
+	                                        codigoProducto int,
+	                                        codigoTipoProducto int,
+	                                        producto text,
+	                                        unidadPrecio text,
+	                                        precio int,
+	                                        volumen int,
+	                                        unidadVolumen text,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
+		                                        @Fecha_inicial = N'"+parameters.fecha_inicial+@"-01-01',
+		                                        @Fecha_final = N'" + parameters.fecha_final + @"-01-01'
+
+                                        SELECT 
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento, 
+	                                        regionDepartamento.codigoDepartamento_RegionDepartamento,
+	                                        producto.descripcion_Producto,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
+	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                         FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+                                         ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                         and regionDepartamento.descripcionDepartamento_RegionDepartamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") 
+                                         and producto.descripcion_Producto = '" + parameters.tipo_producto + @"'
+
+                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
+
+                            DataTable datap3 = adapter.GetDatatable(sqlp3);
+                            Parameter param3 = new Parameter { name = "departamentos" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap3.AsEnumerable() select p[@"departamento"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param3.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param3;
+
+
+                            break;
+                    }
+                    break;
+                case "grafico":
+
+                    String sqlGrafico = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
+	                                        fecha date,
+	                                        codigoDepartamento int,
+	                                        codigoProducto int,
+	                                        codigoTipoProducto int,
+	                                        producto text,
+	                                        unidadPrecio text,
+	                                        precio int,
+	                                        volumen int,
+	                                        unidadVolumen text,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
+		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
+		                                        @Fecha_final = N'" + parameters.fecha_final + @"-01-01'
+
+                                        SELECT 
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento, 
+	                                        regionDepartamento.codigoDepartamento_RegionDepartamento as codigoDepartamento,
+	                                        producto.descripcion_Producto as producto,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha as fecha,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio as precio,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen as volumen,
+	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                         FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+                                         ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                         and regionDepartamento.descripcionDepartamento_RegionDepartamento  IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") 
+                                         and producto.descripcion_Producto = '" + parameters.tipo_producto + @"'
+
+                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
+
+                                DataTable datatable = adapter.GetDatatable(sqlGrafico);
+                                var dataGroups = from r in datatable.AsEnumerable()
+                                             group r by r["departamento"] into seriesGroup
+                                             select seriesGroup;
+
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            Chart chart1 = new Chart { subtitle = @"Tendencia mensual del precio", series = new List<Series>() };
+
+                            foreach(var dataGroup in dataGroups){
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach(var seriesData in dataGroup){
+                                    var name = Convert.ToDateTime(seriesData["fecha"]);
+                                    var y = Convert.ToDouble(seriesData["precio"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart1;
+
+                            break;
+                        case 2:
+
+                            Chart chart2 = new Chart { subtitle = @"Tendencia mensual del volumen", series = new List<Series>() };
+
+                            foreach(var dataGroup in dataGroups){
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach(var seriesData in dataGroup){
+                                    var name = Convert.ToDateTime(seriesData["fecha"]);
+                                    var y = Convert.ToDouble(seriesData["volumen"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart2.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart2;
+
+                            break;
+                        
+                    }
+                    break;
+                case "tabla":
+
+                    String sqlTable = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
+	                                        fecha date,
+	                                        codigoDepartamento int,
+	                                        codigoProducto int,
+	                                        codigoTipoProducto int,
+	                                        producto text,
+	                                        unidadPrecio text,
+	                                        precio int,
+	                                        volumen int,
+	                                        unidadVolumen text,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
+		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
+		                                        @Fecha_final = N'" + parameters.fecha_final + @"-01-01'
+
+                                        SELECT 
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento, 
+	                                        regionDepartamento.codigoDepartamento_RegionDepartamento as codigoDepartamento,
+	                                        producto.descripcion_Producto as producto,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha as fecha,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio as precio,
+	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen as volumen,
+	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                         FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+                                         ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                         and regionDepartamento.descripcionDepartamento_RegionDepartamento  IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") 
+                                         and producto.descripcion_Producto = '" + parameters.tipo_producto + @"'
+
+                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            DataTable datatable2 = adapter.GetDatatable(sqlTable);
+                            Table table = new Table { rows = datatable2 };
+                            returnData = (Table)table;
+
+                            break;
+                  
+                    }
+                    break;
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/306")]
+        public IHttpActionResult postReport306(report306 parameters)
+        {
+            Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            String sqlp1 = @" SELECT DISTINCT
+                                             YEAR(PreciosConsumidor.fecha_PreciosConsumidor) as anios
+ 
+                                             FROM   (AgronetCadenas.consumidor.PreciosConsumidor PreciosConsumidor 
+	                                            INNER JOIN AgronetCadenas.Leche.Divipola Divipola 
+                                             ON PreciosConsumidor.codigoCiudad_PreciosConsumidor=Divipola.codigoMunicipio) 
+	                                            INNER JOIN AgronetCadenas.consumidor.producto producto 
+                                             ON PreciosConsumidor.codigoProducto_PreciosConsumidor=producto.codigo_Producto
+                                             ORDER BY YEAR(PreciosConsumidor.fecha_PreciosConsumidor)";
+
+                            DataTable datap1 = adapter.GetDatatable(sqlp1);
+                            Parameter param1 = new Parameter { name = "anios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap1.AsEnumerable() select p[@"anios"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
+                            
+
+                            break;
+                        case 2:
+
+                            String sqlp2 = @" SELECT DISTINCT Divipola.nombreMunicipio as municipios
+                                            FROM   (AgronetCadenas.consumidor.PreciosConsumidor PreciosConsumidor 
+	                                        INNER JOIN AgronetCadenas.Leche.Divipola Divipola 
+                                            ON PreciosConsumidor.codigoCiudad_PreciosConsumidor=Divipola.codigoMunicipio) 
+	                                        INNER JOIN AgronetCadenas.consumidor.producto producto 
+                                            ON PreciosConsumidor.codigoProducto_PreciosConsumidor=producto.codigo_Producto
+                                            ORDER BY Divipola.nombreMunicipio";
+
+                            DataTable datap2 = adapter.GetDatatable(sqlp2);
+                            Parameter param2 = new Parameter { name = "municipios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"municipios"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
+
+                            break;
+                        case 3:
+
+
+
                             break;
                     }
                     break;
@@ -580,30 +939,6 @@ namespace AgronetEstadisticas.Controllers
                     break;
             }
 
-            if (returnData == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(returnData);
-        }
-
-        [Route("api/Report/305")]
-        public IHttpActionResult postReport305(report305 parameters)
-        {
-            Object returnData = null;
-            if (returnData == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(returnData);
-        }
-
-        [Route("api/Report/306")]
-        public IHttpActionResult postReport306(report306 parameters)
-        {
-            Object returnData = null;
             if (returnData == null)
             {
                 return NotFound();
