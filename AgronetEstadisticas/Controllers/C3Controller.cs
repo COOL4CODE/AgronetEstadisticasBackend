@@ -144,94 +144,150 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport302(report302 parameters)
         {
             Object returnData = null;
-
-            var adapter = new SQLAdapter();
-            string sql = String.Format(@"create table  #SP_PRECIOS_LECHE_REGION (
-	                                fecha date, 
-	                                codigoRegion int,
-	                                precio int,
-	                                volumen int,
-	                                variacionPrecio float,
-	                                variacionVolumen float
-                                )
-                                insert into #SP_PRECIOS_LECHE_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_REGION]
-		                                @Fecha_inicial = N'{0}',
-		                                @Fecha_final = N'{1}'
-                                SELECT 
-	                                region.descripcion_Region, 
-	                                #SP_PRECIOS_LECHE_REGION.fecha,
-	                                #SP_PRECIOS_LECHE_REGION.precio,
-	                                #SP_PRECIOS_LECHE_REGION.volumen,
-	                                ISNULL(#SP_PRECIOS_LECHE_REGION.variacionPrecio,0) as variacionPrecio,
-	                                ISNULL(#SP_PRECIOS_LECHE_REGION.variacionVolumen,0) as variacionVolumen
-                                 FROM  AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_REGION 
-                                 ON #SP_PRECIOS_LECHE_REGION.codigoRegion = region.codigo_Region
-                                 WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}' and '{3}'
-
-                                DROP TABLE #SP_PRECIOS_LECHE_REGION", parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"), parameters.fecha_inicial.ToString("yyyy-MM-dd"), parameters.fecha_final.ToString("yyyy-MM-dd"));
-
-            DataTable result = adapter.GetDatatable(sql);
-
-            if (parameters.tipo == "grafico")
-            {                
-                switch (parameters.id)
-                {
-                    case 1:
-                        Chart chart1 = new Chart { subtitle = "Tendencia mensual al precio", series = new List<Series>() };
-
-                        var queryCharts = from r in result.AsEnumerable()
-                                          group r by r["descripcion_Region"] into seriesGroup
-                                          select seriesGroup;
-
-                        foreach (var outerGroup in queryCharts)
-                        {
-                            var serie = new Series { name = outerGroup.Key.ToString(), data = new List<Data>() };
-                            foreach (var element in outerGroup)
-                            {
-                                var name = Convert.ToDateTime(element["fecha"]);
-                                var y = Convert.ToDouble(element["precio"]);
-                                var data = new Data { name = String.Format("{0:y}", name), y = y };
-                                serie.data.Add(data);
-                            }
-                            chart1.series.Add(serie);
-                        }
-
-                        returnData = (Chart)chart1;
-                        break;
-                    case 2:
-                        Chart chart2 = new Chart { subtitle = "Tendencia mensual del volumen", series = new List<Series>() };
-
-                        var queryCharts1 = from r in result.AsEnumerable()
-                                           group r by r["descripcion_Region"] into seriesGroup
-                                           select seriesGroup;
-
-                        foreach (var outerGroup in queryCharts1)
-                        {
-                            var serie = new Series { name = outerGroup.Key.ToString(), data = new List<Data>() };
-                            foreach (var element in outerGroup)
-                            {
-                                var name = Convert.ToDateTime(element["fecha"]);
-                                var y = Convert.ToDouble(element["volumen"]);
-                                var data = new Data { name = String.Format("{0:y}", name), y = y };
-                                serie.data.Add(data);
-                            }
-                            chart2.series.Add(serie);
-                        }
-
-                        returnData = (Chart)chart2;
-                        break;
-                }
-
-            }
-            else if (parameters.tipo == "tabla")
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
             {
-                switch (parameters.id)
-                {
-                    case 1:
-                        Table table = new Table { rows = result };
-                        returnData = (Table)table;
-                        break;
-                }
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            string sql = @"SELECT DISTINCT
+                                YEAR(calidadRegional.fecha_CalidadRegional) as anios
+                                FROM   
+                                AgronetCadenas.compraLeche.calidadRegional calidadRegional
+                                ORDER BY YEAR(calidadRegional.fecha_CalidadRegional)";
+
+                            DataTable data = adapter.GetDatatable(sql);
+                            Parameter param = new Parameter { name = "anios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in data.AsEnumerable() select p[@"anios"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param;
+
+                            break;
+                    }
+                    break;
+                case "grafico":
+
+                    string sqlChart = String.Format(@"create table  #SP_PRECIOS_LECHE_REGION (
+	                                                        fecha date, 
+	                                                        codigoRegion int,
+	                                                        precio int,
+	                                                        volumen int,
+	                                                        variacionPrecio float,
+	                                                        variacionVolumen float
+                                                        )
+                                                        insert into #SP_PRECIOS_LECHE_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_REGION]
+		                                                        @Fecha_inicial = N'{0}-01-01',
+		                                                        @Fecha_final = N'{1}-01-01'
+
+                                                        SELECT 
+	                                                        region.descripcion_Region, 
+	                                                        #SP_PRECIOS_LECHE_REGION.fecha,
+	                                                        #SP_PRECIOS_LECHE_REGION.precio,
+	                                                        #SP_PRECIOS_LECHE_REGION.volumen,
+	                                                        ISNULL(#SP_PRECIOS_LECHE_REGION.variacionPrecio,0) as variacionPrecio,
+	                                                        ISNULL(#SP_PRECIOS_LECHE_REGION.variacionVolumen,0) as variacionVolumen
+                                                         FROM   AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_REGION 
+                                                         ON #SP_PRECIOS_LECHE_REGION.codigoRegion = region.codigo_Region
+                                                         WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}-01-01' and '{3}-01-01'
+
+                                                        DROP TABLE #SP_PRECIOS_LECHE_REGION",
+                                                        parameters.fecha_inicial,parameters.fecha_final,
+                                                        parameters.fecha_inicial,parameters.fecha_final
+                                                        );
+                            DataTable datatable = adapter.GetDatatable(sqlChart);
+                            var dataGroups = from r in datatable.AsEnumerable()
+                                             group r by r["descripcion_Region"] into seriesGroup
+                                             select seriesGroup;
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            
+                            Chart chart1 = new Chart { subtitle = @"Tendencia mensual del precio", series = new List<Series>() };
+
+                            foreach(var dataGroup in dataGroups){
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach(var seriesData in dataGroup){
+                                    var name = Convert.ToDateTime(seriesData["fecha"]);
+                                    var y = Convert.ToDouble(seriesData["precio"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart1;
+
+                            break;
+                        case 2:
+
+                             Chart chart2 = new Chart { subtitle = @"Tendencia mensual del volumen", series = new List<Series>() };
+
+                            foreach(var dataGroup in dataGroups){
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach(var seriesData in dataGroup){
+                                    var name = Convert.ToDateTime(seriesData["fecha"]);
+                                    var y = Convert.ToDouble(seriesData["volumen"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart2.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart2;
+
+                            break;
+
+                    }
+                    break;
+                case "tabla":
+
+                    string sqlTable = String.Format(@"create table  #SP_PRECIOS_LECHE_REGION (
+	                                                        fecha date, 
+	                                                        codigoRegion int,
+	                                                        precio int,
+	                                                        volumen int,
+	                                                        variacionPrecio float,
+	                                                        variacionVolumen float
+                                                        )
+                                                        insert into #SP_PRECIOS_LECHE_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_REGION]
+		                                                        @Fecha_inicial = N'{0}-01-01',
+		                                                        @Fecha_final = N'{1}-01-01'
+
+                                                        SELECT 
+	                                                        region.descripcion_Region, 
+	                                                        #SP_PRECIOS_LECHE_REGION.fecha,
+	                                                        #SP_PRECIOS_LECHE_REGION.precio,
+	                                                        #SP_PRECIOS_LECHE_REGION.volumen,
+	                                                        ISNULL(#SP_PRECIOS_LECHE_REGION.variacionPrecio,0) as variacionPrecio,
+	                                                        ISNULL(#SP_PRECIOS_LECHE_REGION.variacionVolumen,0) as variacionVolumen
+                                                         FROM   AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_REGION 
+                                                         ON #SP_PRECIOS_LECHE_REGION.codigoRegion = region.codigo_Region
+                                                         WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}-01-01' and '{3}-01-01'
+
+                                                        DROP TABLE #SP_PRECIOS_LECHE_REGION",
+                                                        parameters.fecha_inicial,parameters.fecha_final,
+                                                        parameters.fecha_inicial,parameters.fecha_final
+                                                        );
+                            DataTable datatable2 = adapter.GetDatatable(sqlTable);
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            Table table = new Table { rows = datatable2 };
+                            returnData = (Table)table;
+
+                            break;
+                        
+                    }
+                    break;
             }
 
             if (returnData == null)
@@ -246,19 +302,284 @@ namespace AgronetEstadisticas.Controllers
         [Route("api/Report/303")]
         public IHttpActionResult postReport303(report303 parameters)
         {
+            
             Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            string sql = @"SELECT DISTINCT
+                                YEAR(calidadRegional.fecha_CalidadRegional) as anios
+                                FROM   
+                                AgronetCadenas.compraLeche.calidadRegional calidadRegional
+                                ORDER BY YEAR(calidadRegional.fecha_CalidadRegional)";
+
+                            DataTable data = adapter.GetDatatable(sql);
+                            Parameter param = new Parameter { name = "anios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in data.AsEnumerable() select p[@"anios"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param;
+
+                            break;
+                        case 2:
+
+                            string sqlp2 = @"create table  #SP_PRECIOS_LECHE_DEPARTAMENTO(
+	                                        fecha date,
+	                                        codigoDepartamento int,
+	                                        precio int,
+	                                        volumen int,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_LECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_DEPARTAMENTO]
+		                                         @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01', @Fecha_final = N'" + parameters.fecha_final + @"-12-31'
+
+                                        SELECT DISTINCT
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as deptos
+                                         FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_DEPARTAMENTO 
+                                         ON #SP_PRECIOS_LECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                         WHERE #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '"
+                                                                                             + parameters.fecha_final + @"-12-31'
+                                                                                              
+                                       DROP TABLE #SP_PRECIOS_LECHE_DEPARTAMENTO";
+
+                            DataTable datap2 = adapter.GetDatatable(sqlp2);
+                            Parameter paramp2 = new Parameter { name = "departamentos" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"deptos"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                paramp2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)paramp2;
+
+                            break;
+                    }
+                    break;
+                case "grafico":
+
+                    string sqlChart = @"create table  #SP_PRECIOS_LECHE_DEPARTAMENTO(
+	                                    fecha date,
+	                                    codigoDepartamento int,
+	                                    precio int,
+	                                    volumen int,
+	                                    variacionPrecio float,
+	                                    variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_LECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_DEPARTAMENTO]
+		                                        @Fecha_inicial = N'"+parameters.fecha_inicial+@"-01-01', @Fecha_final = N'"+parameters.fecha_final+@"-12-31' 
+                                        SELECT 
+	                                    regionDepartamento.descripcionDepartamento_RegionDepartamento as descDep, 
+	                                    regionDepartamento.codigoDepartamento_RegionDepartamento as codigoDep,
+	                                    #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha,
+	                                    #SP_PRECIOS_LECHE_DEPARTAMENTO.precio,
+	                                    #SP_PRECIOS_LECHE_DEPARTAMENTO.volumen,
+	                                    ISNULL(#SP_PRECIOS_LECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                    ISNULL(#SP_PRECIOS_LECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                        FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_DEPARTAMENTO 
+                                        ON #SP_PRECIOS_LECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                        WHERE #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha between '"+parameters.fecha_inicial+@"-01-01' and '"
+                                                                                             +parameters.fecha_final+@"-12-31'
+                                                                                             and regionDepartamento.descripcionDepartamento_RegionDepartamento IN ("+string.Join(",",parameters.departamento.Select(d => "'"+d+"'")) +@") 
+                                       DROP TABLE #SP_PRECIOS_LECHE_DEPARTAMENTO";
+                                                        
+                        DataTable datatable = adapter.GetDatatable(sqlChart);
+                        var dataGroups = from r in datatable.AsEnumerable()
+                        group r by r["descDep"] into seriesGroup
+                        select seriesGroup;
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            
+                            Chart chart1 = new Chart { subtitle = @"Tendencia mensual del precio", series = new List<Series>() };
+
+                            foreach(var dataGroup in dataGroups){
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach(var seriesData in dataGroup){
+                                    var name = Convert.ToDateTime(seriesData["fecha"]);
+                                    var y = Convert.ToDouble(seriesData["precio"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart1;
+
+                            break;
+                        case 2:
+
+                            Chart chart2 = new Chart { subtitle = @"Tendencia mensual del volumen", series = new List<Series>() };
+
+                            foreach(var dataGroup in dataGroups){
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach(var seriesData in dataGroup){
+                                    var name = Convert.ToDateTime(seriesData["fecha"]);
+                                    var y = Convert.ToDouble(seriesData["volumen"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart2.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart2;
+
+                            break;
+
+                    }
+                    break;
+                case "tabla":
+
+                    string sqlTable = @"create table  #SP_PRECIOS_LECHE_DEPARTAMENTO(
+	                                    fecha date,
+	                                    codigoDepartamento int,
+	                                    precio int,
+	                                    volumen int,
+	                                    variacionPrecio float,
+	                                    variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_LECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_DEPARTAMENTO]
+		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01', @Fecha_final = N'" + parameters.fecha_final + @"-12-31' 
+                                        SELECT 
+	                                    regionDepartamento.descripcionDepartamento_RegionDepartamento as descDep, 
+	                                    regionDepartamento.codigoDepartamento_RegionDepartamento as codigoDep,
+	                                    #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha,
+	                                    #SP_PRECIOS_LECHE_DEPARTAMENTO.precio,
+	                                    #SP_PRECIOS_LECHE_DEPARTAMENTO.volumen,
+	                                    ISNULL(#SP_PRECIOS_LECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                    ISNULL(#SP_PRECIOS_LECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                        FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_DEPARTAMENTO 
+                                        ON #SP_PRECIOS_LECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                        WHERE #SP_PRECIOS_LECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '"
+                                                                                             + parameters.fecha_final + @"-12-31'
+                                        and regionDepartamento.descripcionDepartamento_RegionDepartamento = IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ") DROP TABLE #SP_PRECIOS_LECHE_DEPARTAMENTO";
+                            DataTable datatable2 = adapter.GetDatatable(sqlTable);
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            Table table = new Table { rows = datatable2 };
+                            returnData = (Table)table;
+
+                            break;
+                        
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
             }
 
             return Ok(returnData);
+
         }
 
         [Route("api/Report/304")]
         public IHttpActionResult postReport304(report304 parameters)
         {
             Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                             string sql = @"SELECT DISTINCT
+                                YEAR(calidadRegional.fecha_CalidadRegional) as anios
+                                FROM   
+                                AgronetCadenas.compraLeche.calidadRegional calidadRegional
+                                ORDER BY YEAR(calidadRegional.fecha_CalidadRegional)";
+
+                            DataTable data = adapter.GetDatatable(sql);
+                            Parameter param = new Parameter { name = "anios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in data.AsEnumerable() select p[@"anios"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param;
+                            break;
+                        case 2:
+                            string sqlp2 = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
+	                                        fecha date,
+	                                        codigoDepartamento int,
+	                                        codigoProducto int,
+	                                        codigoTipoProducto int,
+	                                        producto text,
+	                                        unidadPrecio text,
+	                                        precio int,
+	                                        volumen int,
+	                                        unidadVolumen text,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
+		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
+		                                        @Fecha_final = N'" + parameters.fecha_final+ @"-01-01'
+
+                                        SELECT 
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento
+                                         FROM   
+                                         AgronetCadenas.Leche.regionDepartamento regionDepartamento 
+                                         INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+	                                        ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
+                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
+	                                        ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+
+
+                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
+
+                             DataTable datap2 = adapter.GetDatatable(sqlp2);
+                            Parameter paramp2 = new Parameter { name = "departamentos" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"departamento"])){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                paramp2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)paramp2;        
+
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
