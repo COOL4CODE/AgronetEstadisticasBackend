@@ -1118,6 +1118,135 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport308(report308 parameters)
         {
             Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            String sqlp1 = @"select 
+                                            DISTINCT YEAR(fecha_PrecioGanadero) as anios
+                                            from AgronetCadenas.compraLeche.precioGanaderoDepto 
+                                            ORDER BY YEAR(fecha_PrecioGanadero)";
+
+                            DataTable datap1 = adapter.GetDatatable(sqlp1);
+                            Parameter param1 = new Parameter { name = "anios", data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap1.AsEnumerable() select p[@"anios"]))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
+
+                            break;
+
+                    }
+                    break;
+                case "grafico":
+
+                    String sqlGrafico1 = @"create table  #SP_PRECIOS_LECHE_GANADERO_REGION(
+	fecha date,
+	codigoRegion int,
+	precio int,
+	variacionPrecio float,
+	variacionVolumen float
+)
+insert into #SP_PRECIOS_LECHE_GANADERO_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_GANADERO_REGION]
+		@Fecha_inicial = N'"+parameters.fecha_inicial+@"-01-01',
+		@Fecha_final = N'"+parameters.fecha_final+@"-01-01'
+
+SELECT region.descripcion_Region as region,
+	#SP_PRECIOS_LECHE_GANADERO_REGION.fecha as fecha,
+	#SP_PRECIOS_LECHE_GANADERO_REGION.precio as precio,
+	ISNULL(#SP_PRECIOS_LECHE_GANADERO_REGION.variacionPrecio,0) as variacionPrecio,
+	ISNULL(#SP_PRECIOS_LECHE_GANADERO_REGION.variacionVolumen,0) as variacionVolumen
+ FROM AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_GANADERO_REGION 
+ ON #SP_PRECIOS_LECHE_GANADERO_REGION.codigoRegion = region.codigo_Region
+ WHERE #SP_PRECIOS_LECHE_GANADERO_REGION.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+
+DROP TABLE #SP_PRECIOS_LECHE_GANADERO_REGION";
+
+
+                    DataTable datatable = adapter.GetDatatable(sqlGrafico1);
+                    var dataGroups = from r in datatable.AsEnumerable()
+                                     group r by r["region"] into seriesGroup
+                                     select seriesGroup;
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            Chart chart1 = new Chart
+                            {
+                                subtitle = @"Precio de compra de leche cruda al productor con ‎bonificaciones voluntarias por región‎",
+                                series = new List<Series>()
+                            };
+
+                            foreach (var dataGroup in dataGroups)
+                            {
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in dataGroup)
+                                {
+                                    var name = Convert.ToDateTime(seriesData["fecha"]);
+                                    var y = Convert.ToDouble(seriesData["precio"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart1;
+
+                            break;
+
+                    }
+                    break;
+                case "tabla":
+
+
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+
+                            String sqlTabla1 = @"create table  #SP_PRECIOS_LECHE_GANADERO_REGION(
+	                                        fecha date,
+	                                        codigoRegion int,
+	                                        precio int,
+	                                        variacionPrecio float,
+	                                        variacionVolumen float
+                                        )
+                                        insert into #SP_PRECIOS_LECHE_GANADERO_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_GANADERO_REGION]
+		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
+		                                        @Fecha_final = N'" + parameters.fecha_final + @"-12-31'
+
+                                        SELECT region.descripcion_Region,
+	                                        #SP_PRECIOS_LECHE_GANADERO_REGION.fecha,
+	                                        #SP_PRECIOS_LECHE_GANADERO_REGION.precio,
+	                                        ISNULL(#SP_PRECIOS_LECHE_GANADERO_REGION.variacionPrecio,0) as variacionPrecio,
+	                                        ISNULL(#SP_PRECIOS_LECHE_GANADERO_REGION.variacionVolumen,0) as variacionVolumen
+                                         FROM AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_GANADERO_REGION 
+                                         ON #SP_PRECIOS_LECHE_GANADERO_REGION.codigoRegion = region.codigo_Region
+                                         WHERE #SP_PRECIOS_LECHE_GANADERO_REGION.fecha between '" + parameters.fecha_inicial + @"-01-01' 
+                                        and '" + parameters.fecha_final + @"-12-31'
+
+                                        DROP TABLE #SP_PRECIOS_LECHE_GANADERO_REGION";
+
+
+                            DataTable data = adapter.GetDatatable(sqlTabla1);
+                            Table table = new Table { rows = data };
+                            returnData = (Table)table;
+
+                            break;
+
+                    }
+                    break;
+            }
+
             if (returnData == null)
             {
                 return NotFound();
