@@ -7,9 +7,9 @@ namespace AgronetEstadisticas.Models.parametersBinding
 {
     public class report506 : report
     {
-        public DateTime fecha_inicial { get; set; }
+        public String fecha_inicial { get; set; }
 
-        public DateTime fecha_final { get; set; }
+        public String fecha_final { get; set; }
 
         public string grupo { get; set; }
 
