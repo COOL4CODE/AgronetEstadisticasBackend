@@ -497,7 +497,7 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            string sql = @"select DISTINCT YEAR(fecha_PrecioDepartamental) 
+                            string sql = @"select DISTINCT YEAR(fecha_PrecioDepartamental) as anios 
                                         from AgronetCadenas.ventaLeche.PrecioDepartamental
                                         ORDER BY YEAR(fecha_PrecioDepartamental)
                                         ";
@@ -681,9 +681,9 @@ namespace AgronetEstadisticas.Controllers
 		                                        @Fecha_final = N'" + parameters.fecha_final + @"-01-01'
 
                                         SELECT 
-	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento, 
-	                                        regionDepartamento.codigoDepartamento_RegionDepartamento,
-	                                        producto.descripcion_Producto,
+	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento, 
+	                                        regionDepartamento.codigoDepartamento_RegionDepartamento as codigoDepartamento,
+	                                        producto.descripcion_Producto as productos,
 	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
 	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
 	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
@@ -699,8 +699,8 @@ namespace AgronetEstadisticas.Controllers
                                         DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
 
                             DataTable datap3 = adapter.GetDatatable(sqlp3);
-                            Parameter param3 = new Parameter { name = "departamentos" , data = new List<ParameterData>() };
-                            foreach (var d in (from p in datap3.AsEnumerable() select p[@"departamento"])){
+                            Parameter param3 = new Parameter { name = "productos" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap3.AsEnumerable() select p[@"productos"])){
                                 ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
                                 param3.data.Add(parameter);
                             }
