@@ -140,6 +140,7 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Views\C6\" />
+    <Folder Include="Views\Default\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adapter\PostgresqlAdapter.cs" />
@@ -191,6 +192,7 @@
     <Compile Include="Models\Chart.cs" />
     <Compile Include="Models\Data.cs" />
     <Compile Include="Models\Parameters.cs" />
+    <Compile Include="Models\parametersBinding\DownloadTable.cs" />
     <Compile Include="Models\parametersBinding\report.cs" />
     <Compile Include="Models\parametersBinding\report101.cs" />
     <Compile Include="Models\parametersBinding\report102.cs" />

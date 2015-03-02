@@ -253,7 +253,7 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            String sql1 = @" SELECT Sipsa_ProductosDiarios.nombreProducto_ProductosDiarios, 
+                            String sql1 = String.Format(@"SELECT Sipsa_ProductosDiarios.nombreProducto_ProductosDiarios, 
                                              VW_PrecioPequeñosProductores.fecha, 
                                              VW_PrecioPequeñosProductores.nombreMercado_MercadosDia, 
                                              VW_PrecioPequeñosProductores.PrecioSemanaAnt, 
@@ -265,8 +265,8 @@ namespace AgronetEstadisticas.Controllers
                                              FROM   (AgronetSIPSA.dbo.VW_PrecioPequeñosProductores VW_PrecioPequeñosProductores 
                                              INNER JOIN AgronetSIPSA.dbo.Sipsa_MercadosDiarios Sipsa_MercadosDiarios ON VW_PrecioPequeñosProductores.codMercado_MercadosDia=Sipsa_MercadosDiarios.codMercado_MercadosDia) 
                                              INNER JOIN AgronetSIPSA.dbo.Sipsa_ProductosDiarios Sipsa_ProductosDiarios ON VW_PrecioPequeñosProductores.nombreProducto_ProductosDiarios=Sipsa_ProductosDiarios.nombreProducto_ProductosDiarios
-                                             WHERE Sipsa_ProductosDiarios.codigoProducto_ProductosDiarios = 90
-                                             ORDER BY VW_PrecioPequeñosProductores.nombreMercado_MercadosDia";
+                                             WHERE Sipsa_ProductosDiarios.codigoProducto_ProductosDiarios = {0}
+                                             ORDER BY VW_PrecioPequeñosProductores.nombreMercado_MercadosDia", parameters.producto);
 
                             DataTable results = adapter.GetDatatable(sql1);
                             Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
@@ -289,7 +289,7 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                             String sql1 = @" SELECT Sipsa_ProductosDiarios.nombreProducto_ProductosDiarios, 
+                             String sql1 = String.Format(@"SELECT Sipsa_ProductosDiarios.nombreProducto_ProductosDiarios, 
                                              VW_PrecioPequeñosProductores.fecha, 
                                              VW_PrecioPequeñosProductores.nombreMercado_MercadosDia, 
                                              VW_PrecioPequeñosProductores.PrecioSemanaAnt, 
@@ -301,8 +301,8 @@ namespace AgronetEstadisticas.Controllers
                                              FROM   (AgronetSIPSA.dbo.VW_PrecioPequeñosProductores VW_PrecioPequeñosProductores 
                                              INNER JOIN AgronetSIPSA.dbo.Sipsa_MercadosDiarios Sipsa_MercadosDiarios ON VW_PrecioPequeñosProductores.codMercado_MercadosDia=Sipsa_MercadosDiarios.codMercado_MercadosDia) 
                                              INNER JOIN AgronetSIPSA.dbo.Sipsa_ProductosDiarios Sipsa_ProductosDiarios ON VW_PrecioPequeñosProductores.nombreProducto_ProductosDiarios=Sipsa_ProductosDiarios.nombreProducto_ProductosDiarios
-                                             WHERE Sipsa_ProductosDiarios.codigoProducto_ProductosDiarios = 90
-                                             ORDER BY VW_PrecioPequeñosProductores.nombreMercado_MercadosDia";
+                                             WHERE Sipsa_ProductosDiarios.codigoProducto_ProductosDiarios = {0}
+                                             ORDER BY VW_PrecioPequeñosProductores.nombreMercado_MercadosDia", parameters.producto);
 
                             DataTable tableResults = adapter.GetDatatable(sql1);
                             Table table = new Table { rows = tableResults };
