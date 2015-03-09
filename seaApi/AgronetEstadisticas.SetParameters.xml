@@ -2,7 +2,7 @@
 <parameters>
   <setParameter name="IIS Web Application Name" value="seaApi" />
   <setParameter name="AgronetSQL-Web.config Connection String" value="Data Source=tcp:172.18.4.7,1433;User ID=usuario_web_crystal;Password=agronet" />
-  <setParameter name="AgronetPostgreSQL-Web.config Connection String" value="server=172.18.4.9;port=5434;user id=usuario_estadisticas;password=Agr0n3t2;database=agromapas" />
-  <setParameter name="AgronetSQLAnalysisServicesComercio-Web.config Connection String" value="Data Source=25.1.60.99; Catalog=BI_ComercioColombia" />
-  <setParameter name="AgronetSQLAnalysisServicesCredito-Web.config Connection String" value="Data Source=25.1.60.99; Catalog=BI_Credito" />
+  <setParameter name="AgronetPostgreSQL-Web.config Connection String" value="server=172.18.4.9;port=5434;user id=usuario_estadisticas;password=@Gr0n3t#;database=agromapas" />
+  <setParameter name="AgronetSQLAnalysisServicesComercio-Web.config Connection String" value="Data Source=172.20.51.34; Catalog=BI_ComercioColombia_DW" />
+  <setParameter name="AgronetSQLAnalysisServicesCredito-Web.config Connection String" value="Data Source=172.20.51.34; Catalog=BI_Credito_DW" />
 </parameters>

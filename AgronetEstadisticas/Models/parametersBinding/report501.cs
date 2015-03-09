@@ -11,14 +11,14 @@ namespace AgronetEstadisticas.Models.parametersBinding
 
         public string mercado { get; set; }
 
-        public DateTime fecha_inicial { get; set; }
+        public string fecha_inicial { get; set; }
 
-        public DateTime fecha_final { get; set; }
+        public string fecha_final { get; set; }
 
-        public string periodo_corto { get; set; }
+        public int periodo_corto { get; set; }
 
-        public string periodo_largo { get; set; }
+        public int periodo_largo { get; set; }
 
-        public string numero_periodos_ifr { get; set; }
+        public int numero_periodos_ifr { get; set; }
     }
 }
