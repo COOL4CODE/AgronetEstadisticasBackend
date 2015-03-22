@@ -96,6 +96,66 @@ namespace AgronetEstadisticas.Controllers
                 }
                 returnData = (Parameter)parameter;
             }
+            else if (parameters.tipo == "grafico")
+            {
+                mdxParams.Add(new MdxParameter("@cadena", String.Format("[Producto].[Cadena].&[{0}]", parameters.cadena)));
+                mdxParams.Add(new MdxParameter("~[Producto].[Cadena].[Cadena]", "cadena"));
+                mdxParams.Add(new MdxParameter("~[Producto].[Cadena-Partida10].[Descripcion Partida10 Dig Union]", "partidas"));
+                mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                mdxParams.Add(new MdxParameter("~[Periodo].[Mes].[Mes]", "mes"));
+                string mdx = @"SELECT 
+                                        NON EMPTY {[Measures].[Ton Netas Expo],[Measures].[Valor Expo Miles FOB Dol]} ON 0, 
+                                        NON EMPTY filter({{ @anio } * [Periodo].[Mes].[Mes]},[Measures].[Ton Netas Expo]>0) ON 1 FROM [Agronet Comercio] WHERE { @cadena * {";
+                for (int i = 0; i < parameters.partida.Count; i++)
+                {
+                    mdx += (i + 1 == parameters.partida.Count) ? "@partida" + i : "@partida" + i + ",";
+                    mdxParams.Add(new MdxParameter("@partida" + i, String.Format("[Producto].[Cadena-Partida10].&[{0}]", parameters.partida[i])));
+                }
+                mdx += @"}};";
+                switch (parameters.id)
+                {
+                    case 1:                       
+                        DataTable result = adapter.GetDataTable(connectionName, mdx, mdxParams);
+                        Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
+
+                        Series serie1 = new Series { name = "Valor", data = new List<Data>() };
+                        Series serie2 = new Series { name = "Volumen", data = new List<Data>() };
+
+                        chart1.series.Add(serie1);
+                        chart1.series.Add(serie2);
+
+                        foreach (var d1 in (from d in result.AsEnumerable()
+                                            select d))
+                        {
+                            Data data1 = new Data { name = Convert.ToString(d1["anio"] + " " + d1["mes"]), y = Convert.ToDouble(d1["valor"]) };
+                            Data data2 = new Data { name = Convert.ToString(d1["anio"] + " " + d1["mes"]), y = Convert.ToDouble(d1["volumen"]) };
+
+                            serie1.data.Add(data1);
+                            serie2.data.Add(data2);
+                        }
+
+                        returnData = (Chart)chart1;
+                        break;
+                    case 2:
+                        DataTable result1 = adapter.GetDataTable(connectionName, mdx, mdxParams);
+                        Chart chart2 = new Chart { subtitle = "", series = new List<Series>() };
+
+                        Series serie3 = new Series { name = "Precio implícito", data = new List<Data>() };
+                        chart2.series.Add(serie3);
+
+                        foreach (var d1 in (from d in result1.AsEnumerable()
+                                            select d))
+                        {
+                            Data data1 = new Data { name = Convert.ToString(d1["anio"] + " " + d1["mes"]), y = Convert.ToDouble(d1["valor"]) / Convert.ToDouble(d1["volumen"]) };
+                            serie3.data.Add(data1);
+                        }
+
+                        returnData = (Chart)chart2;
+                        break;
+                }
+            }
             else if (parameters.tipo == "tabla")
             {
                 Table table = new Table { rows = new DataTable() };
@@ -322,6 +382,65 @@ namespace AgronetEstadisticas.Controllers
                     }
                     
                     break;
+                case "grafico":
+                    mdxParams.Add(new MdxParameter("@producto", String.Format("[Producto].[Producto General].&[{0}]", parameters.producto)));
+                    mdxParams.Add(new MdxParameter("~[Producto].[Producto General].[Producto General]", "producto"));
+                    mdxParams.Add(new MdxParameter("~[Producto].[Cadena-Partida10].[Descripcion Partida10 Dig Union]", "partidas"));
+                    mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                    mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                    mdxParams.Add(new MdxParameter("~[Periodo].[Mes].[Mes]", "mes"));
+                    string mdxG = @"SELECT 
+                                    NON EMPTY {[Measures].[Ton Netas Expo],[Measures].[Valor Expo Miles FOB Dol]} ON 0, 
+                                    NON EMPTY {@anio} ON 1 FROM [Agronet Comercio] WHERE { @producto * {";
+                    for (int i = 0; i < parameters.partida.Count; i++)
+                    {
+                        mdxG += (i + 1 == parameters.partida.Count) ? "@partida" + i : "@partida" + i + ",";
+                        mdxParams.Add(new MdxParameter("@partida" + i, String.Format("[Producto].[Cadena-Partida10].&[{0}]", parameters.partida[i])));
+                    }
+                    mdxG += @"}}";                
+
+                switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable result = adapter.GetDataTable(connectionName, mdxG, mdxParams);
+                            Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "Valor", data = new List<Data>() };
+                            Series serie2 = new Series { name = "Volumen", data = new List<Data>() };
+
+                            chart1.series.Add(serie1);
+                            chart1.series.Add(serie2);
+
+                            foreach (var d1 in (from d in result.AsEnumerable()
+                                                select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d1["anio"]), y = Convert.ToDouble(d1["valor"]) };
+                                Data data2 = new Data { name = Convert.ToString(d1["anio"]), y = Convert.ToDouble(d1["volumen"]) };
+
+                                serie1.data.Add(data1);
+                                serie2.data.Add(data2);
+                            }
+
+                            returnData = (Chart)chart1; 
+                            break;
+                        case 2:
+                            DataTable result1 = adapter.GetDataTable(connectionName, mdxG, mdxParams);
+                            Chart chart2 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            Series serie3 = new Series { name = "Precio Implícito", data = new List<Data>() };
+                            chart2.series.Add(serie3);
+
+                            foreach (var d1 in (from d in result1.AsEnumerable()
+                                                select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d1["anio"]), y = Convert.ToDouble(d1["valor"]) / Convert.ToDouble(d1["volumen"]) };
+                                serie3.data.Add(data1);
+                            }
+
+                            returnData = (Chart)chart2;
+                            break;
+                    }
+                    break;
                 case "tabla":
                     switch (parameters.id)
                     {
@@ -439,7 +558,7 @@ namespace AgronetEstadisticas.Controllers
                             Series serie1 = new Series { name = "Partida", data = new List<Data>() };
                             foreach (var d in (from d in data1.AsEnumerable() select d))
                             {
-                                Data data = new Data { name = Convert.ToString(d["partida"]).Substring(0,20)+"...", y = Convert.ToDouble(d["volumen"])};
+                                Data data = new Data { name = Convert.ToString(d["partida"]), y = Convert.ToDouble(d["volumen"])};
                                 serie1.data.Add(data);
                             }
                             chart1.series.Add(serie1);
@@ -648,27 +767,60 @@ namespace AgronetEstadisticas.Controllers
         {
             Object returnData = null;
             SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            string connectionName = "AgronetSQLAnalysisServicesComercio";
+
+            List<MdxParameter> mdxParams = new List<MdxParameter>();
             switch (parameters.tipo)
             {
                 case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
                     switch (parameters.id)
                     {
                         case 1:
+                            parameter.name = "pais";
+                            mdxParams.Add(new MdxParameter("@pais", "[Pais].[Pais].[Pais]"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            string mdx1 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @pais }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data1 = adapter.GetDataTable(connectionName, mdx1, mdxParams);
+                            foreach (var p in (from p in data1.AsEnumerable()
+                                               select p["pais"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;                           
                             break;
                         case 2:
+                            parameter.name = "producto";
+                            mdxParams.Add(new MdxParameter("@producto", "[Producto].[Producto General].[Producto General]"));
+                            mdxParams.Add(new MdxParameter("@pais", String.Format("[Pais].[Pais].[{0}]", parameters.pais)));
+                            mdxParams.Add(new MdxParameter("~[Producto].[Producto General].[Producto General]", "producto"));
+                            string mdx2 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @producto }) ON 1 FROM [Agronet Comercio] WHERE { @pais };";
+
+                            DataTable data2 = adapter.GetDataTable(connectionName, mdx2, mdxParams);
+                            foreach (var p in (from p in data2.AsEnumerable()
+                                               select p["producto"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                         case 3:
-                            break;
-                    }
-                    break;
-                case "grafico":
-                    switch (parameters.id)
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            parameter.name = "anio";
+                            mdxParams.Add(new MdxParameter("@anio", "[Periodo].[anho].[anho]"));
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            string mdx3 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @anio }) ON 1 FROM [Agronet Comercio];";
+
+                            DataTable data3 = adapter.GetDataTable(connectionName, mdx3, mdxParams);
+                            foreach (var p in (from p in data3.AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
                             break;
                     }
                     break;
@@ -676,10 +828,18 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                            mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                            mdxParams.Add(new MdxParameter("~[Producto].[Producto General].[Producto General]", "producto"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Balanza Toneladas]", "balanza_ton"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Ton Netas Expo]", "ton_expo"));
+                            mdxParams.Add(new MdxParameter("~[Measures].[Ton Netas Impo]", "ton_impo"));
+                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                            mdxParams.Add(new MdxParameter("@pais", String.Format("[Pais].[Pais].[{0}]", parameters.pais)));
+                            mdxParams.Add(new MdxParameter("@producto", String.Format("[Producto].[Producto General].[{0}]", parameters.producto)));
+                            string mdx1 = @"SELECT NON EMPTY{[Measures].[Balanza Toneladas], [Measures].[Ton Netas Expo], [Measures].[Ton Netas Impo]}  ON 0,
+                                            NON EMPTY { @pais } * { @producto } * { @anio } ON 1 FROM [Agronet Comercio];";
+                            returnData = (Table)new Table { rows = adapter.GetDataTable(connectionName, mdx1, mdxParams) };
                             break;
                     }
                     break;
@@ -893,30 +1053,29 @@ namespace AgronetEstadisticas.Controllers
                     }
                     break;
                 case "grafico":
+                    mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
+                    mdxParams.Add(new MdxParameter("~[Measures].[Ton Netas Impo]", "volumen"));
+                    mdxParams.Add(new MdxParameter("~[Measures].[Valor Impo Miles CIF Dol]", "valor"));
+                    mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
+                    mdxParams.Add(new MdxParameter("@cadena", String.Format("[Producto].[Cadena].&[{0}]", parameters.cadena)));
+                    string mdxG = @"SELECT NON EMPTY {[Measures].[Ton Netas Impo],[Measures].[Valor Impo Miles CIF Dol]} ON 0,
+                    NON EMPTY Filter({ @anio },[Measures].[Ton Netas Impo] > 0) ON 1
+                    FROM [Agronet Comercio] WHERE {";
+                    for (int i = 0; i < parameters.partida.Count; i++)
+                    {
+                        mdxG += (i + 1 == parameters.partida.Count) ? "@partida" + i : "@partida" + i + ",";
+                        mdxParams.Add(new MdxParameter("@partida" + i, String.Format("[Producto].[Cadena-Partida10].[Descripcion Partida10 Dig Union].&[{0}]", parameters.partida[i])));
+                    }
+                    mdxG += @"} * { @cadena }";
                     switch (parameters.id)
                     {
                         case 1:
-                            mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
-                            mdxParams.Add(new MdxParameter("~[Measures].[Ton Netas Impo]", "volumen"));
-                            mdxParams.Add(new MdxParameter("~[Measures].[Valor Impo Miles CIF Dol]", "valor"));
-                            mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
-                            mdxParams.Add(new MdxParameter("@cadena", String.Format("[Producto].[Cadena].&[{0}]", parameters.cadena)));
-                            string mdx1 = @"SELECT NON EMPTY {[Measures].[Ton Netas Impo],[Measures].[Valor Impo Miles CIF Dol]} ON 0,
-                            NON EMPTY Filter({ @anio },[Measures].[Ton Netas Impo] > 0) ON 1
-                            FROM [Agronet Comercio] WHERE {";
-                            for (int i = 0; i < parameters.partida.Count; i++)
-                            {
-                                mdx1 += (i + 1 == parameters.partida.Count) ? "@partida" + i : "@partida" + i + ",";
-                                mdxParams.Add(new MdxParameter("@partida" + i, String.Format("[Producto].[Cadena-Partida10].[Descripcion Partida10 Dig Union].&[{0}]", parameters.partida[i])));
-                            }
-                            mdx1 += @"} * { @cadena }";
-
                             Chart chart1 = new Chart { series = new List<Series>() };
 
                             Series serie1 = new Series { name = "Volumen", data = new List<Data>() };
                             Series serie2 = new Series { name = "Valor", data = new List<Data>() };
 
-                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdx1, mdxParams)).AsEnumerable() select d))
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdxG, mdxParams)).AsEnumerable() select d))
                             {
                                 Data data1 = new Data { name = Convert.ToString(d["anio"]), y = Convert.ToDouble(d["volumen"]) };
                                 Data data2 = new Data { name = Convert.ToString(d["anio"]), y = Convert.ToDouble(d["valor"]) };
@@ -928,6 +1087,19 @@ namespace AgronetEstadisticas.Controllers
                             chart1.series.Add(serie2);
 
                             returnData = (Chart)chart1;
+                            break;
+                        case 2:
+                            Chart chart2 = new Chart { series = new List<Series>() };
+
+                            Series serie3 = new Series { name = "Precio Implícito", data = new List<Data>() };
+
+                            foreach (var d in (from d in (adapter.GetDataTable(connectionName, mdxG, mdxParams)).AsEnumerable() select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d["anio"]), y = Convert.ToDouble(d["valor"]) / Convert.ToDouble(d["volumen"]) };
+                                serie3.data.Add(data1);
+                            }
+                            chart2.series.Add(serie3);
+                            returnData = (Chart)chart2;
                             break;
                     }
                     break;
@@ -1511,8 +1683,8 @@ namespace AgronetEstadisticas.Controllers
                             mdxParams.Add(new MdxParameter("@producto", "[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]"));
                             mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
                             mdxParams.Add(new MdxParameter("~[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]", "producto"));
-                            string mdx3 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @producto }) ON 1 FROM [Agronet Comercio] WHERE { @pais };";
-
+                           string mdx3 = @"SELECT Non Empty {} ON 0, ORDER ({ @producto }, 0 , ASC) on 1 FROM [Agronet Comercio] WHERE { @pais };";
+                            
                             DataTable data3 = adapter.GetDataTable(connectionName, mdx3, mdxParams);
                             foreach (var p in (from p in data3.AsEnumerable()
                                                select p["producto"]))
@@ -1623,7 +1795,7 @@ namespace AgronetEstadisticas.Controllers
                             mdxParams.Add(new MdxParameter("@producto", "[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]"));
                             mdxParams.Add(new MdxParameter("~[Producto].[Producto-Partida10].[Descripcion Partida10 Dig Union]", "producto"));
                             mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
-                            string mdx3 = @"SELECT NonEmpty({{}}) ON 0, NonEmpty({ @producto }) ON 1 FROM [Agronet Comercio] WHERE { @anio };";
+                            string mdx3 = @"SELECT NonEmpty({{}}) ON 0, ORDER({ @producto }, 0 , ASC) ON 1 FROM [Agronet Comercio] WHERE { @anio };";
 
                             DataTable data3 = adapter.GetDataTable(connectionName, mdx3, mdxParams);
                             foreach (var p in (from p in data3.AsEnumerable()
