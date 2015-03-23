@@ -60,9 +60,9 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.nombreProducto_ProductosSeman
                             returnData = (Parameter)param2;
                             break;
                         case 3:
-                            DataTable data3 = adapter.GetDatatable(@"SELECT DISTINCT YEAR(fecha_SipsaSemanal) as fecha FROM [AgronetSIPSA].dbo.SipsaSemanal
-WHERE [AgronetSIPSA].dbo.SipsaSemanal.codMercado_SipsaSemanal = 29
-ORDER BY YEAR(fecha_SipsaSemanal);");
+                            DataTable data3 = adapter.GetDatatable(string.Format(@"SELECT DISTINCT YEAR(fecha_SipsaSemanal) as fecha FROM [AgronetSIPSA].dbo.SipsaSemanal
+WHERE [AgronetSIPSA].dbo.SipsaSemanal.codMercado_SipsaSemanal = {0}
+ORDER BY YEAR(fecha_SipsaSemanal);", parameters.mercado));
                             Parameter param3 = new Parameter { name = "fecha", data = new List<ParameterData>() };
                             foreach (var d in (from p in data3.AsEnumerable() select p))
                             {
@@ -370,10 +370,44 @@ ORDER BY SipsaMensual.fecha_SipsaSemanal", parameters.producto, parameters.merca
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data = adapter.GetDatatable(@"SELECT DISTINCT 
+Sipsa_ProductosSemanales.nombreProducto_ProductosSemanales AS descripcion, 
+Sipsa_ProductosSemanales.codigoProducto_ProductosSemanales AS codigo 
+FROM [AgronetSIPSA].dbo.SipsaSemanal INNER JOIN [AgronetSIPSA].dbo.Sipsa_ProductosSemanales ON SipsaSemanal.codProducto_SipsaSemanal = Sipsa_ProductosSemanales.codigoProducto_ProductosSemanales 
+ORDER BY descripcion;");
+                            Parameter param = new Parameter { name = "productos", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param;
                             break;
                         case 2:
+                            DataTable data2 = adapter.GetDatatable(String.Format(@"SELECT DISTINCT [AgronetSIPSA].dbo.Sipsa_MercadosSem.nombreMercado_MercadosSem AS descripcion, [AgronetSIPSA].dbo.Sipsa_MercadosSem.codMercado_MercadosSem AS codigo 
+FROM [AgronetSIPSA].dbo.Sipsa_MercadosSem INNER JOIN [AgronetSIPSA].dbo.SipsaSemanal ON Sipsa_MercadosSem.codMercado_MercadosSem = SipsaSemanal.codMercado_SipsaSemanal 
+INNER JOIN [AgronetSIPSA].dbo.Sipsa_ProductosSemanales ON [AgronetSIPSA].dbo.SipsaSemanal.codProducto_SipsaSemanal = [AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSemanales 
+WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSemanales = {0}) ORDER BY descripcion;", parameters.producto));
+                            Parameter param2 = new Parameter { name = "mercados", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
                         case 3:
+                            DataTable data3 = adapter.GetDatatable(@"SELECT DISTINCT YEAR(fecha_SipsaSemanal) as fecha FROM [AgronetSIPSA].dbo.SipsaSemanal ORDER BY YEAR(fecha_SipsaSemanal);");
+                            Parameter param3 = new Parameter { name = "fecha", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data3.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["fecha"]), value = Convert.ToString(d["fecha"]) };
+                                param3.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param3;
                             break;
                     }
                     break;
@@ -381,21 +415,134 @@ ORDER BY SipsaMensual.fecha_SipsaSemanal", parameters.producto, parameters.merca
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_COMPARACION_MERCADOS1(producto text,mercado text,fecha_sipsa date,mercado2 float,unidad text,uno int)
+CREATE TABLE #SP_COMPARACION_MERCADOS2(productob text,mercadob text,fecha_sipsab date,mercado2b float,unidadb text,unob int)
+INSERT INTO #SP_COMPARACION_MERCADOS1
+EXEC	[AgronetSIPSA].[dbo].[SP_ComparacionMercados]
+		@PRODUCTO = {0},
+		@MERCADO1 = {1},
+		@MERCADO2 = {2}
+INSERT INTO #SP_COMPARACION_MERCADOS2
+EXEC	[AgronetSIPSA].[dbo].[SP_COMPARACIONMERCADOS_2]
+		@PRODUCTO = {3},
+		@MERCADO1 = {4},
+		@MERCADO2 = {5}
+SELECT DATEDIFF(ss, '01/01/1970', #SP_COMPARACION_MERCADOS1.fecha_sipsa) as fechaunix,* FROM #SP_COMPARACION_MERCADOS1
+INNER JOIN #SP_COMPARACION_MERCADOS2 ON #SP_COMPARACION_MERCADOS1.fecha_sipsa = #SP_COMPARACION_MERCADOS2.fecha_sipsab
+WHERE #SP_COMPARACION_MERCADOS1.fecha_sipsa BETWEEN '{6}' AND '{7}'
+ORDER BY #SP_COMPARACION_MERCADOS1.fecha_sipsa
+DROP TABLE #SP_COMPARACION_MERCADOS1
+DROP TABLE #SP_COMPARACION_MERCADOS2;", parameters.producto, parameters.mercado1, parameters.mercado2, parameters.producto, parameters.mercado1, parameters.mercado2, parameters.fecha_inicial, parameters.fecha_final));
+                            Chart chart1 = new Chart { series = new List<Series>() };
+
+                            Series serie1 = new Series { data = new List<Data>() };
+                            Series serie2 = new Series { data = new List<Data>() };
+
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                select d))
+                            {
+                                serie1.name = Convert.ToString(d1["mercado"]);
+                                serie2.name = Convert.ToString(d1["mercadob"]);
+                                serie1.data.Add(new Data { name = Convert.ToString(d1["fechaunix"]), y = Convert.ToDouble(d1["mercado2"]) });
+                                serie2.data.Add(new Data { name = Convert.ToString(d1["fechaunix"]), y = Convert.ToDouble(d1["mercado2b"]) });
+                            }
+                            chart1.series.Add(serie1);
+                            chart1.series.Add(serie2);
+
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
                 case "tabla":
+                    DataTable results2 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_COMPARACION_MERCADOS1(producto text,mercado text,fecha_sipsa date,mercado2 float,unidad text,uno int)
+CREATE TABLE #SP_COMPARACION_MERCADOS2(productob text,mercadob text,fecha_sipsab date,mercado2b float,unidadb text,unob int)
+INSERT INTO #SP_COMPARACION_MERCADOS1
+EXEC	[AgronetSIPSA].[dbo].[SP_ComparacionMercados]
+		@PRODUCTO = {0},
+		@MERCADO1 = {1},
+		@MERCADO2 = {2}
+INSERT INTO #SP_COMPARACION_MERCADOS2
+EXEC	[AgronetSIPSA].[dbo].[SP_COMPARACIONMERCADOS_2]
+		@PRODUCTO = {3},
+		@MERCADO1 = {4},
+		@MERCADO2 = {5}
+SELECT DATEDIFF(ss, '01/01/1970', #SP_COMPARACION_MERCADOS1.fecha_sipsa) as fechaunix,* FROM #SP_COMPARACION_MERCADOS1
+INNER JOIN #SP_COMPARACION_MERCADOS2 ON #SP_COMPARACION_MERCADOS1.fecha_sipsa = #SP_COMPARACION_MERCADOS2.fecha_sipsab
+WHERE #SP_COMPARACION_MERCADOS1.fecha_sipsa BETWEEN '{6}' AND '{7}'
+ORDER BY #SP_COMPARACION_MERCADOS1.fecha_sipsa
+DROP TABLE #SP_COMPARACION_MERCADOS1
+DROP TABLE #SP_COMPARACION_MERCADOS2;", parameters.producto, parameters.mercado1, parameters.mercado2, parameters.producto, parameters.mercado1, parameters.mercado2, parameters.fecha_inicial, parameters.fecha_final));
+                            
                     switch (parameters.id)
                     {
                         case 1:
+                            Table table1 = new Table { rows = results2 };
+                            returnData = (Table)table1;
                             break;
                         case 2:
-                            break;
-                        case 3:
+                            
+                            Double proPrecioMercadoA = results2.AsEnumerable().Average(x => x.Field<Double>("mercado2"));
+                            Double proPrecioMercadoB = results2.AsEnumerable().Average(x => x.Field<Double>("mercado2B"));
+                            Double maxPrecioMercadoA = results2.AsEnumerable().Max(x => x.Field<Double>("mercado2"));
+                            Double maxPrecioMercadoB = results2.AsEnumerable().Max(x => x.Field<Double>("mercado2B"));
+                            Double minPrecioMercadoA = results2.AsEnumerable().Min(x => x.Field<Double>("mercado2"));
+                            Double minPrecioMercadoB = results2.AsEnumerable().Min(x => x.Field<Double>("mercado2B"));
+                            Double dsvPrecioMercadoA = StdDev(results2.AsEnumerable().Select(x => x.Field<Double>("mercado2")));
+                            Double dsvPrecioMercadoB = StdDev(results2.AsEnumerable().Select(x => x.Field<Double>("mercado2B")));
+                            Double cvPrecioMercadoA = (dsvPrecioMercadoA / proPrecioMercadoA) * 100;
+                            Double cvPrecioMercadoB = (dsvPrecioMercadoB / proPrecioMercadoB) * 100;
+                            Double covMercadoAMercadoB = Covariance(results2.AsEnumerable().Select(x => x.Field<Double>("mercado2")), results2.AsEnumerable().Select(x => x.Field<Double>("mercado2B")));
+                            Double volPrecioMercadoA = VolatilidadHistorica(results2.AsEnumerable().Select(x => x.Field<Double>("mercado2")));
+                            Double volPrecioMercadoB = VolatilidadHistorica(results2.AsEnumerable().Select(x => x.Field<Double>("mercado2B")));
+
+                            Table table2 = new Table { rows = new DataTable() };
+
+                            table2.rows.Columns.Add("descripcion", typeof(string));
+                            table2.rows.Columns.Add("mercadoA", typeof(double));
+                            table2.rows.Columns.Add("mercadoB", typeof(double));
+                            table2.rows.Columns.Add("relacion_precio", typeof(double));
+                            table2.rows.Columns.Add("diferencia", typeof(double));
+
+                            table2.rows.Rows.Add("Promedio histórico‎", 
+                                Math.Round(proPrecioMercadoA,2), 
+                                Math.Round(proPrecioMercadoB,2), 
+                                Math.Round(proPrecioMercadoA / proPrecioMercadoB,2),
+                                Math.Round(proPrecioMercadoA - proPrecioMercadoB,2));
+
+                            table2.rows.Rows.Add("Máximo histórico‎",
+                                Math.Round(maxPrecioMercadoA, 2),
+                                Math.Round(maxPrecioMercadoB, 2),
+                                Math.Round(maxPrecioMercadoA / maxPrecioMercadoB, 2),
+                                Math.Round(maxPrecioMercadoA - maxPrecioMercadoB, 2));
+
+                            table2.rows.Rows.Add("Mínimo histórico‎",
+                                Math.Round(minPrecioMercadoA, 2),
+                                Math.Round(minPrecioMercadoB, 2),
+                                Math.Round(minPrecioMercadoA / minPrecioMercadoB, 2),
+                                Math.Round(minPrecioMercadoA - minPrecioMercadoB, 2));
+
+                            table2.rows.Rows.Add("Desviación estándar‎",
+                                Math.Round(dsvPrecioMercadoA, 2),
+                                Math.Round(dsvPrecioMercadoB, 2),
+                                Math.Round(dsvPrecioMercadoA / dsvPrecioMercadoB, 2),
+                                Math.Round(dsvPrecioMercadoA - dsvPrecioMercadoB, 2));
+
+                            table2.rows.Rows.Add("Coeficiente de variación‎",
+                               Math.Round(cvPrecioMercadoA, 2),
+                               Math.Round(cvPrecioMercadoB, 2),
+                               Math.Round(cvPrecioMercadoA / cvPrecioMercadoB, 2),
+                               Math.Round(cvPrecioMercadoA - cvPrecioMercadoB, 2));
+
+                            table2.rows.Rows.Add("Volatilidad histórica semanal‎‎",
+                               Math.Round(volPrecioMercadoA, 2),
+                               Math.Round(volPrecioMercadoB, 2),
+                               Math.Round(volPrecioMercadoA / volPrecioMercadoB, 2), null);
+
+                            table2.rows.Rows.Add("Coeficiente de correlación‎‎",
+                               Math.Round(covMercadoAMercadoB / (dsvPrecioMercadoA * dsvPrecioMercadoB), 2), null, null, null);
+
+
+                            returnData = (Table)table2;
                             break;
                     }
                     break;
@@ -420,10 +567,44 @@ ORDER BY SipsaMensual.fecha_SipsaSemanal", parameters.producto, parameters.merca
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data = adapter.GetDatatable(@"SELECT DISTINCT 
+Sipsa_ProductosSemanales.nombreProducto_ProductosSemanales AS descripcion, 
+Sipsa_ProductosSemanales.codigoProducto_ProductosSemanales AS codigo 
+FROM [AgronetSIPSA].dbo.SipsaSemanal INNER JOIN [AgronetSIPSA].dbo.Sipsa_ProductosSemanales ON SipsaSemanal.codProducto_SipsaSemanal = Sipsa_ProductosSemanales.codigoProducto_ProductosSemanales 
+ORDER BY descripcion;");
+                            Parameter param = new Parameter { name = "productos", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param;
                             break;
                         case 2:
+                            DataTable data2 = adapter.GetDatatable(String.Format(@"SELECT DISTINCT [AgronetSIPSA].dbo.Sipsa_MercadosSem.nombreMercado_MercadosSem AS descripcion, [AgronetSIPSA].dbo.Sipsa_MercadosSem.codMercado_MercadosSem AS codigo 
+FROM [AgronetSIPSA].dbo.Sipsa_MercadosSem INNER JOIN [AgronetSIPSA].dbo.SipsaSemanal ON Sipsa_MercadosSem.codMercado_MercadosSem = SipsaSemanal.codMercado_SipsaSemanal 
+INNER JOIN [AgronetSIPSA].dbo.Sipsa_ProductosSemanales ON [AgronetSIPSA].dbo.SipsaSemanal.codProducto_SipsaSemanal = [AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSemanales 
+WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSemanales = {0}) ORDER BY descripcion;", parameters.producto));
+                            Parameter param2 = new Parameter { name = "mercados", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
                         case 3:
+                            DataTable data3 = adapter.GetDatatable(@"SELECT DISTINCT YEAR(fecha_SipsaSemanal) as fecha FROM [AgronetSIPSA].dbo.SipsaSemanal ORDER BY YEAR(fecha_SipsaSemanal);");
+                            Parameter param3 = new Parameter { name = "fecha", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data3.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["fecha"]), value = Convert.ToString(d["fecha"]) };
+                                param3.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param3;
                             break;
                     }
                     break;
@@ -431,10 +612,36 @@ ORDER BY SipsaMensual.fecha_SipsaSemanal", parameters.producto, parameters.merca
                     switch (parameters.id)
                     {
                         case 1:
+                            Chart chart1 = new Chart { subtitle = "Precios Mensuales", series = new List<Series>() };
+
+                            foreach (var d1 in (from d in (adapter.GetDatatable(String.Format(@"SELECT DATEDIFF(ss, '01/01/1970', SipsaMensual.fecha_SipsaSemanal) as fechaunix, SipsaMensual.fecha_SipsaSemanal, SipsaMensual.precioPromedioSemanal_SipsaSemanal, Sipsa_Productos.nombreProducto_ProductosSemanales, Sipsa_Mercados.nombreMercado_MercadosSem, Sipsa_UnidadesSemMen.nombreUnidad_SipsaUnidadesSemMen
+ FROM   ((AgronetSIPSA.dbo.SipsaSemanal SipsaMensual 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_MercadosSem Sipsa_Mercados 
+ ON SipsaMensual.codMercado_SipsaSemanal=Sipsa_Mercados.codMercado_MercadosSem) 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_ProductosSemanales Sipsa_Productos 
+ ON SipsaMensual.codProducto_SipsaSemanal=Sipsa_Productos.codigoProducto_ProductosSemanales) 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_UnidadesSemMen Sipsa_UnidadesSemMen 
+ ON SipsaMensual.codUnidad_SipsaSemanal=Sipsa_UnidadesSemMen.codUnidad_SipsaUnidadesSemMen
+ WHERE SipsaMensual.fecha_SipsaSemanal between '{0}' and '{1}'
+ and Sipsa_Productos.codigoProducto_ProductosSemanales = {2}
+ and Sipsa_Mercados.codMercado_MercadosSem in (" + string.Join(",",parameters.mercado.Select(d => d)) + @")
+ ORDER BY Sipsa_Mercados.nombreMercado_MercadosSem, SipsaMensual.fecha_SipsaSemanal;", parameters.fecha_inicial, parameters.fecha_final, parameters.producto))).AsEnumerable()
+                                           group d by d["nombreMercado_MercadosSem"] into mercadoG
+                                                select mercadoG))
+                            {
+                                var serie = new Series { name = d1.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in d1)
+                                {   
+                                    var data = new Data { name = Convert.ToString(seriesData["fechaunix"]), y = Convert.ToDouble(seriesData["precioPromedioSemanal_SipsaSemanal"]) };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+                            
+                            returnData = (Chart)chart1;
                             break;
                         case 2:
-                            break;
-                        case 3:
                             break;
                     }
                     break;
@@ -1087,5 +1294,52 @@ ORDER BY SipsaMensual.fecha_SipsaSemanal", parameters.producto, parameters.merca
 
             return Ok(returnData);
         }
+
+        private double VolatilidadHistorica(IEnumerable<double> values)
+        {
+            double ret = 0;
+            List<double> vol = new List<double>();
+            if (values.Count() > 0)
+            {
+                for (int i = 0; i < values.Count(); i++)
+                {
+                    if (i > 0)
+                    {
+                        vol.Add((Math.Log(values.ElementAt(i) / values.ElementAt(i - 1)) * 100));
+                    }
+                }
+
+                ret = StdDev(vol.AsEnumerable());
+            }
+            return ret;
+        }
+
+        private double StdDev(IEnumerable<double> values)
+        {
+            double ret = 0;
+
+            if (values.Count() > 0)
+            {
+                double avg = values.Average();
+                double sum = values.Sum(d => Math.Pow(d - avg, 2));
+                ret = Math.Sqrt((sum) / values.Count() - 1);
+            }
+            return ret;
+        }
+
+        private double Covariance(IEnumerable<double> source, IEnumerable<double> other)
+        {
+            int len = source.Count();
+
+            double avgSource = source.Average();
+            double avgOther = other.Average();
+            double covariance = 0;
+
+            for (int i = 0; i < len; i++)
+                covariance += (source.ElementAt(i) - avgSource) * (other.ElementAt(i) - avgOther);
+
+            return covariance / len;
+        }
     }
+
 }
