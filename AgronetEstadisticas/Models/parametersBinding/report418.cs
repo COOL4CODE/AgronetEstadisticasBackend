@@ -9,6 +9,9 @@ namespace AgronetEstadisticas.Models.parametersBinding
     {
         public string producto { get; set; }
 
-        public List<string> anio { get; set; }
+        public string anio_inicial { get; set; }
+
+        public string anio_final { get; set; }
+
     }
 }

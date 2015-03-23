@@ -1934,40 +1934,150 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport418(report418 parameters)
         {
             Object returnData = null;
-            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            SQLAdapter adapter = new SQLAdapter();
             switch (parameters.tipo)
             {
                 case "parametro":
                     switch (parameters.id)
                     {
                         case 1:
+
+                            String sqlp1 = @"SELECT codigoProducto_BolsaProducto as productocod, 
+                                            nombreProducto_BolsaProducto as producto
+                                            FROM AgronetIndicadores.dbo.Indicadores_BolsaProducto
+                                            WHERE tipoBolsa_BolsaProducto  in (2,5) and estado in ( 2, 1)
+                                            ORDER BY nombreProducto_BolsaProducto";
+
+                            DataTable datap1 = adapter.GetDatatable(sqlp1);
+                            Parameter param1 = new Parameter { name = "producto", data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["producto"]), value = Convert.ToString(d["productocod"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
+
+
                             break;
                         case 2:
+
+                            String sqlp2 = @"SELECT 
+                                             DISTINCT 
+                                             YEAR (FechaFuturo_IndicadoresPreciosFuturos) AS anio,
+                                             CAST(YEAR(FechaFuturo_IndicadoresPreciosFuturos) AS nvarchar)
+                                              + ' - ' + DATENAME(month, FechaFuturo_IndicadoresPreciosFuturos) AS descripcion
+                                             FROM AgronetIndicadores.dbo.Indicadores_PreciosFuturos
+                                            -- PARAMETRO DE PRODUCTO
+                                             WHERE codProducto_IndicadoresPreciosFuturos =  17
+                                             ORDER BY anio";
+
+                            DataTable datap2 = adapter.GetDatatable(sqlp2);
+                            Parameter param2 = new Parameter { name = "fechas", data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["anio"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
+
                             break;
-                        case 3:
-                            break;
+
                     }
                     break;
                 case "grafico":
+
+                    String sqlGrafico1 = @" SELECT 
+                                            Indicadores_PreciosFuturos.fecha_IndicadoresPreciosFuturos, 
+                                            Indicadores_PreciosFuturos.valor_IndicadoresPreciosFuturos, 
+                                            Indicadores_PreciosFuturos.FechaFuturo_IndicadoresPreciosFuturos, 
+                                            Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos, 
+                                            Indicadores_BolsaProducto.nombreProducto_BolsaProducto, 
+                                            Indicadores_BolsaProducto.unidad_BolsaProducto, 
+                                            Indicadores_BolsaProducto.unidadAbr_BolsaProducto
+                                            FROM   
+                                            AgronetIndicadores.dbo.Indicadores_PreciosFuturos Indicadores_PreciosFuturos 
+                                            INNER JOIN AgronetIndicadores.dbo.Indicadores_BolsaProducto Indicadores_BolsaProducto 
+                                            ON Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos=Indicadores_BolsaProducto.codigoProducto_BolsaProducto
+                                            WHERE
+                                            -- PARAMETROS
+                                            Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos = "+parameters.producto+@"
+                                            and Indicadores_PreciosFuturos.fecha_IndicadoresPreciosFuturos between '"+parameters.anio_inicial+@"-01-01' and '"+parameters.anio_final+@"-12-31'
+                                        ORDER BY Indicadores_PreciosFuturos.FechaFuturo_IndicadoresPreciosFuturos";
+
+
+                    DataTable datatable = adapter.GetDatatable(sqlGrafico1);
+                    var dataGroups = from r in datatable.AsEnumerable()
+                                     group r by r["departamento"] into seriesGroup
+                                     select seriesGroup;
+
                     switch (parameters.id)
                     {
                         case 1:
+
+                            Chart chart1 = new Chart
+                            {
+                                subtitle = @"Precio de compra de leche cruda al productor con ‎bonificaciones voluntarias por departamento",
+                                series = new List<Series>()
+                            };
+
+                            foreach (var dataGroup in dataGroups)
+                            {
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in dataGroup)
+                                {
+                                    var name = Convert.ToDateTime(seriesData["fecha"]);
+                                    var y = Convert.ToDouble(seriesData["precio"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart1;
+
                             break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
+
                     }
                     break;
                 case "tabla":
+
+
+
                     switch (parameters.id)
                     {
                         case 1:
+
+                            String sqlTabla1 = @"create table  #SP_PRECIOS_LECHE_GANADERO_DEPTO(
+                                                    fecha date,
+                                                    codigoDepartamento int,
+                                                    precio int,
+                                                    VariacionMesPrecio float,
+                                                    VariacionAnualPrecio float
+                                                )
+                                                insert into #SP_PRECIOS_LECHE_GANADERO_DEPTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_GANADERO_DEPTO]
+                                                        @Fecha_inicial = N'-01-01',
+                                                        @Fecha_final = N'-10-01'
+
+                                                SELECT 
+                                                regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento, 
+                                                regionDepartamento.codigoDepartamento_RegionDepartamento as codigoDepartamento,
+                                                #SP_PRECIOS_LECHE_GANADERO_DEPTO.fecha as fecha,
+                                                ISNULL(#SP_PRECIOS_LECHE_GANADERO_DEPTO.precio,0) as precio,
+                                                ISNULL(#SP_PRECIOS_LECHE_GANADERO_DEPTO.VariacionMesPrecio,0) as variacionPrecio,
+                                                ISNULL(#SP_PRECIOS_LECHE_GANADERO_DEPTO.VariacionAnualPrecio,0) as variacionVolumen
+                                                FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_GANADERO_DEPTO 
+                                                ON #SP_PRECIOS_LECHE_GANADERO_DEPTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento 
+                                                WHERE #SP_PRECIOS_LECHE_GANADERO_DEPTO.fecha between DROP TABLE #SP_PRECIOS_LECHE_GANADERO_DEPTO";
+
+                            DataTable data = adapter.GetDatatable(sqlTabla1);
+                            Table table = new Table { rows = data };
+                            returnData = (Table)table;
+
                             break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
+
                     }
                     break;
             }
