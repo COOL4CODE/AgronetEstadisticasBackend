@@ -383,41 +383,19 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                 case "grafico":
 
                     string sqlString1 = @"SELECT 
-                                            eva_mpal.productos.nombredescriptorcultivo, 
-                                            COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) AS anho_eva, 
-                                            SUM(COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0)) AS area_eva, 
-                                            SUM(COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0)) AS produccion_eva,
-                                            SUM(COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0)) / SUM(COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0))  AS rendimiento,
-                                            (
-	                                            SELECT COALESCE((SELECT 
-		                                            COALESCE(SUM(e.produccion_eva), 0)
-	                                            FROM eva_mpal.producto p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva
-	                                            WHERE p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo AND e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva
-	                                            GROUP BY e.anho_eva, p.codigoagronetcultivo),0)
-                                            ) /
-                                            (
-	                                            SELECT
-		                                            COALESCE(SUM(e.produccion_eva), 0)
-	                                            FROM eva_mpal.producto p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva
-	                                            WHERE p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo AND e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva
-	                                            GROUP BY e.anho_eva, p.codigoagronetcultivo
-                                            ) as indice_produccion_transitorio,
-                                            (
-	                                            SELECT COALESCE((SELECT 
-		                                            COALESCE(SUM(e.area_eva), 0)
-	                                            FROM eva_mpal.producto p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva
-	                                            WHERE p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo AND e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva
-	                                            GROUP BY e.anho_eva, p.codigoagronetcultivo),0)
-                                            ) / 
-                                            (
-	                                            SELECT 
-		                                            COALESCE(SUM(e.area_eva), 0)
-	                                            FROM eva_mpal.producto p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva
-	                                            WHERE p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo AND e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva
-	                                            GROUP BY e.anho_eva, p.codigoagronetcultivo
-                                            ) as indice_area_transitorio
-                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                            WHERE eva_mpal.evadepartamentalanual.anho_eva >= " + parameters.anio_inicial+" AND eva_mpal.evadepartamentalanual.anho_eva <= "+parameters.anio_final+" AND eva_mpal.productos.nombredescriptorcultivo = '"+parameters.producto+"' GROUP BY eva_mpal.evadepartamentalanual.anho_eva, eva_mpal.productos.nombredescriptorcultivo ORDER BY eva_mpal.evadepartamentalanual.anho_eva asc";
+	eva_mpal.v_evadepartamental.anho_eva as anho_eva, 
+	SUM(eva_mpal.v_evadepartamental.areacosechada_eva) as nacional_area_eva, 
+	SUM(eva_mpal.v_evadepartamental.produccion_eva) as nacional_produccion_eva, 
+	SUM(eva_mpal.v_evadepartamental.rendimiento_eva) as nacional_rendimiento
+	
+FROM eva_mpal.v_evadepartamental INNER JOIN base.v_departamento ON v_evadepartamental.codigodepartamento_eva = base.v_departamento.codigo::VARCHAR
+	INNER JOIN eva_mpal.v_productodetalle ON v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
+WHERE eva_mpal.v_evadepartamental.anho_eva >= "+parameters.anio_inicial+@" 
+	AND eva_mpal.v_evadepartamental.anho_eva <= "+parameters.anio_final+@" 
+	AND eva_mpal.v_productodetalle.codigoagronetproducto = "+parameters.producto+@"
+GROUP BY 
+	eva_mpal.v_evadepartamental.anho_eva
+ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     
                     DataTable results = adapter.GetDataTable(sqlString1);
 
@@ -435,8 +413,8 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             foreach (var d1 in (from d in results.AsEnumerable()
                                                 select d))
                             {
-                                Data data1 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["produccion_eva"]) };
-                                Data data2 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["area_eva"]) };
+                                Data data1 = new Data { name = Convert.ToString(d1["nacional_anho_eva"]), y = Convert.ToDouble(d1["nacional_produccion_eva"]) };
+                                Data data2 = new Data { name = Convert.ToString(d1["nacional_anho_eva"]), y = Convert.ToDouble(d1["nacional_area_eva"]) };
 
                                 serie1.data.Add(data1);
                                 serie2.data.Add(data2);
