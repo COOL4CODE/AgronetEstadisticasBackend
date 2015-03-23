@@ -383,19 +383,19 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                 case "grafico":
 
                     string sqlString1 = @"SELECT 
-	eva_mpal.v_evadepartamental.anho_eva as anho_eva, 
-	SUM(eva_mpal.v_evadepartamental.areacosechada_eva) as nacional_area_eva, 
-	SUM(eva_mpal.v_evadepartamental.produccion_eva) as nacional_produccion_eva, 
-	SUM(eva_mpal.v_evadepartamental.rendimiento_eva) as nacional_rendimiento
+	                                        eva_mpal.v_evadepartamental.anho_eva as nacional_anho_eva, 
+	                                        SUM(eva_mpal.v_evadepartamental.areacosechada_eva) as nacional_area_eva, 
+	                                        SUM(eva_mpal.v_evadepartamental.produccion_eva) as nacional_produccion_eva, 
+	                                        SUM(eva_mpal.v_evadepartamental.rendimiento_eva) as nacional_rendimiento
 	
-FROM eva_mpal.v_evadepartamental INNER JOIN base.v_departamento ON v_evadepartamental.codigodepartamento_eva = base.v_departamento.codigo::VARCHAR
-	INNER JOIN eva_mpal.v_productodetalle ON v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
-WHERE eva_mpal.v_evadepartamental.anho_eva >= "+parameters.anio_inicial+@" 
-	AND eva_mpal.v_evadepartamental.anho_eva <= "+parameters.anio_final+@" 
-	AND eva_mpal.v_productodetalle.codigoagronetproducto = "+parameters.producto+@"
-GROUP BY 
-	eva_mpal.v_evadepartamental.anho_eva
-ORDER BY eva_mpal.v_evadepartamental.anho_eva";
+                                        FROM eva_mpal.v_evadepartamental INNER JOIN base.v_departamento ON v_evadepartamental.codigodepartamento_eva = base.v_departamento.codigo::VARCHAR
+	                                        INNER JOIN eva_mpal.v_productodetalle ON v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
+                                        WHERE eva_mpal.v_evadepartamental.anho_eva >= "+parameters.anio_inicial+@" 
+	                                        AND eva_mpal.v_evadepartamental.anho_eva <= "+parameters.anio_final+@" 
+	                                        AND eva_mpal.v_productodetalle.codigoagronetproducto = "+parameters.producto+@"
+                                        GROUP BY 
+	                                        eva_mpal.v_evadepartamental.anho_eva
+                                        ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     
                     DataTable results = adapter.GetDataTable(sqlString1);
 
