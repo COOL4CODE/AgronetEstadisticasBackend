@@ -2121,40 +2121,136 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport418(report418 parameters)
         {
             Object returnData = null;
-            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            SQLAdapter adapter = new SQLAdapter();
             switch (parameters.tipo)
             {
                 case "parametro":
                     switch (parameters.id)
                     {
                         case 1:
+
+                            String SQLquery1 = @"SELECT        
+                                                codigoProducto_BolsaProducto as productocod, 
+                                                nombreProducto_BolsaProducto as producto
+                                                FROM AgronetIndicadores.dbo.Indicadores_BolsaProducto
+                                                WHERE tipoBolsa_BolsaProducto  in (2,5) and estado in ( 2, 1)
+                                                ORDER BY nombreProducto_BolsaProducto";
+
+                            DataTable data = adapter.GetDatatable(SQLquery1);
+                            Parameter param = new Parameter { name = "producto" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in data.AsEnumerable() select p)){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["producto"]), value = Convert.ToString(d["productocod"]) };
+                                param.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param;
+
                             break;
                         case 2:
+
+                            String SQLQuery2 = @"SELECT 
+                                                 DISTINCT 
+                                                 FechaFuturo_IndicadoresPreciosFuturos AS anio,
+                                                 CAST(YEAR(FechaFuturo_IndicadoresPreciosFuturos) AS nvarchar)
+                                                  + ' - ' + DATENAME(month, FechaFuturo_IndicadoresPreciosFuturos) AS descripcion
+                                                 FROM AgronetIndicadores.dbo.Indicadores_PreciosFuturos
+                                                -- PARAMETRO DE PRODUCTO
+                                                 WHERE codProducto_IndicadoresPreciosFuturos =  "+parameters.producto+@"
+                                                 ORDER BY anio";
+                            DataTable data2 = adapter.GetDatatable(SQLQuery2);
+                            Parameter param2 = new Parameter { name = "anios" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p)){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["anio"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
+
                             break;
-                        case 3:
-                            break;
+                        
                     }
                     break;
                 case "grafico":
                     switch (parameters.id)
                     {
                         case 1:
+
+                        String sqlChart =     @" SELECT 
+                                                 Indicadores_PreciosFuturos.fecha_IndicadoresPreciosFuturos, 
+                                                 Indicadores_PreciosFuturos.valor_IndicadoresPreciosFuturos, 
+                                                 Indicadores_PreciosFuturos.FechaFuturo_IndicadoresPreciosFuturos, 
+                                                 Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos, 
+                                                 Indicadores_BolsaProducto.nombreProducto_BolsaProducto, 
+                                                 Indicadores_BolsaProducto.unidad_BolsaProducto, 
+                                                 Indicadores_BolsaProducto.unidadAbr_BolsaProducto
+                                                 FROM   
+                                                 AgronetIndicadores.dbo.Indicadores_PreciosFuturos Indicadores_PreciosFuturos 
+                                                 INNER JOIN AgronetIndicadores.dbo.Indicadores_BolsaProducto Indicadores_BolsaProducto 
+                                                 ON Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos=Indicadores_BolsaProducto.codigoProducto_BolsaProducto
+                                                 WHERE
+                                                 
+                                                  Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos = "+parameters.producto+@"
+                                                  and Indicadores_PreciosFuturos.FechaFuturo_IndicadoresPreciosFuturos IN (" + string.Join(",", parameters.anio.Select(d => "'" + d + "'")) + @")
+                                                ORDER BY Indicadores_PreciosFuturos.FechaFuturo_IndicadoresPreciosFuturos";
+
+                            DataTable datatable = adapter.GetDatatable(sqlChart);
+                            var dataGroups = from r in datatable.AsEnumerable()
+                                             group r by r["nombreProducto_BolsaProducto"] into seriesGroup
+                                             select seriesGroup;
+
+                            Chart chart1 = new Chart
+                            {
+                                subtitle = @"Cotización del contrato en dólares por tonelada‎",
+                                series = new List<Series>()
+                            };
+
+                            foreach(var dataGroup in dataGroups){
+                                var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
+
+                                foreach(var seriesData in dataGroup){
+                                    var name = Convert.ToDateTime(seriesData["fecha_IndicadoresPreciosFuturos"]);
+                                    var y = Convert.ToDouble(seriesData["valor_IndicadoresPreciosFuturos"]);
+                                    var data = new Data { name = String.Format("{0:d}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart1;
+
+
                             break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
+                       
                     }
                     break;
                 case "tabla":
                     switch (parameters.id)
                     {
                         case 1:
+                            String sqlTable = @" SELECT 
+                                                 Indicadores_PreciosFuturos.fecha_IndicadoresPreciosFuturos, 
+                                                 Indicadores_PreciosFuturos.valor_IndicadoresPreciosFuturos, 
+                                                 Indicadores_PreciosFuturos.FechaFuturo_IndicadoresPreciosFuturos, 
+                                                 Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos, 
+                                                 Indicadores_BolsaProducto.nombreProducto_BolsaProducto, 
+                                                 Indicadores_BolsaProducto.unidad_BolsaProducto, 
+                                                 Indicadores_BolsaProducto.unidadAbr_BolsaProducto
+                                                 FROM   
+                                                 AgronetIndicadores.dbo.Indicadores_PreciosFuturos Indicadores_PreciosFuturos 
+                                                 INNER JOIN AgronetIndicadores.dbo.Indicadores_BolsaProducto Indicadores_BolsaProducto 
+                                                 ON Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos=Indicadores_BolsaProducto.codigoProducto_BolsaProducto
+                                                 WHERE
+                                                 
+                                                  Indicadores_PreciosFuturos.codProducto_IndicadoresPreciosFuturos = " + parameters.producto + @"
+                                                  and Indicadores_PreciosFuturos.FechaFuturo_IndicadoresPreciosFuturos IN (" + string.Join(",", parameters.anio.Select(d => "'" + d + "'")) + @")
+                                                ORDER BY Indicadores_PreciosFuturos.FechaFuturo_IndicadoresPreciosFuturos";
+
+                             DataTable data = adapter.GetDatatable(sqlTable);
+                            Table table = new Table { rows = data };
+                            returnData = (Table)table;
+
                             break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
+                       
                     }
                     break;
             }

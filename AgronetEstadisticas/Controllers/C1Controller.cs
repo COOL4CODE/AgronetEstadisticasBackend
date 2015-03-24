@@ -1052,9 +1052,17 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     switch (parameters.id)
                     {
                         case 1:
-                            string sql1 = @"SELECT DISTINCT pecuario.inventariobovinogrupo.anho 
-                                            FROM base.departamento INNER JOIN pecuario.inventariobovinogrupo ON base.departamento.codigo = pecuario.inventariobovinogrupo.codigodepto
-                                            ORDER BY pecuario.inventariobovinogrupo.anho ASC";
+                            string sql1 = @"SELECT DISTINCT
+                                              pi.anho as anho
+                                            FROM 
+                                              pecuario.inventariobovinogrupo pi, 
+                                              base.departamento b, 
+                                              pecuario.orientacionbovino po
+                                            WHERE 
+                                              b.codigo = pi.codigodepto AND
+                                              po.codigo = pi.codigoedadtipobovino AND
+                                              pi.codigodepto in  (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")	
+                                            ORDER BY pi.anho";
                             DataTable data1 = adapter.GetDataTable(sql1);
                             Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
                             foreach (var p in (from p in data1.AsEnumerable()
@@ -1066,16 +1074,24 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             returnData = (Parameter)parameter1;
                             break;
                         case 2:
-                            string sql2 = @"SELECT DISTINCT 
-                                            base.departamento.nombre
-                                            FROM base.departamento INNER JOIN pecuario.inventariobovinogrupo ON base.departamento.codigo = pecuario.inventariobovinogrupo.codigodepto
-                                            ORDER BY base.departamento.nombre ASC";
+                            string sql2 = @"SELECT DISTINCT
+                                          pi.codigodepto as departamentocod,
+                                          b.nombre as departamento
+                                        FROM 
+                                          pecuario.inventariobovinogrupo pi, 
+                                          base.departamento b, 
+                                          pecuario.orientacionbovino po
+                                        WHERE 
+                                          b.codigo = pi.codigodepto AND
+                                          po.codigo = pi.codigoedadtipobovino
+                                        ORDER BY pi.codigodepto, b.nombre
+                                        ";
                             DataTable data2 = adapter.GetDataTable(sql2);
                             Parameter parameter2 = new Parameter { name = "departamento", data = new List<ParameterData>() };
                             foreach (var p in (from p in data2.AsEnumerable()
-                                               select p["nombre"]))
+                                               select p))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p["departamento"]).Trim(), value = Convert.ToString(p["departamentocod"]).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
@@ -1087,11 +1103,39 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     switch (parameters.id)
                     {
                         case 1:
-                            string sql3 = @"SELECT	pecuario.inventariobovinogrupo.anho,  
-                                    SUM(pecuario.inventariobovinogrupo.totalmachos) total_machos_nacional,
-                                    SUM(pecuario.inventariobovinogrupo.totalhembras) total_hembras_nacional
-                                    FROM pecuario.inventariobovinogrupo
-                                    WHERE inventariobovinogrupo.anho >= "+parameters.anio_inicial+" AND inventariobovinogrupo.anho <= "+parameters.anio_final+" GROUP BY pecuario.inventariobovinogrupo.anho ORDER BY pecuario.inventariobovinogrupo.anho ASC";
+                            string sql3 = @"SELECT 
+                                          inventariobovinogrupo.anho, 
+                                          (SELECT 
+	                                          SUM(p.totalmachos) machos_nal
+	                                        FROM 
+	                                          pecuario.inventariobovinogrupo p, 
+	                                          pecuario.orientacionbovino po
+	                                        WHERE 
+	                                          po.codigo = p.codigoedadtipobovino
+	                                          AND p.anho = inventariobovinogrupo.anho
+
+	                                        GROUP BY p.anho) as total_machos_nal,
+                                          (SELECT 
+	                                          SUM(p.totalhembras) hembras_nal
+	                                        FROM 
+	                                          pecuario.inventariobovinogrupo p, 
+	                                          pecuario.orientacionbovino po
+	                                        WHERE 
+	                                          po.codigo = p.codigoedadtipobovino
+	                                          AND p.anho = inventariobovinogrupo.anho
+
+	                                        GROUP BY p.anho) as total_hembras_nal
+                                        FROM 
+                                          pecuario.inventariobovinogrupo, 
+                                          base.departamento, 
+                                          pecuario.orientacionbovino
+                                        WHERE 
+                                          departamento.codigo = inventariobovinogrupo.codigodepto AND
+                                          orientacionbovino.codigo = inventariobovinogrupo.codigoedadtipobovino
+                                          /*PARAMETROS*/
+                                          AND inventariobovinogrupo.anho >= '" + parameters.anio_inicial + @"' AND inventariobovinogrupo.anho <= '" + parameters.anio_final + @"'
+                                        GROUP BY inventariobovinogrupo.anho
+                                        ORDER BY inventariobovinogrupo.anho";
                     
                             DataTable results1 = adapter.GetDataTable(sql3);                    
 
@@ -1106,8 +1150,8 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             foreach (var d1 in (from d in results1.AsEnumerable()
                                                 select d))
                             {
-                                Data data1 = new Data { name = Convert.ToString(d1["anho"]), y = Convert.ToDouble(d1["total_machos_nacional"]) };
-                                Data data2 = new Data { name = Convert.ToString(d1["anho"]), y = Convert.ToDouble(d1["total_hembras_nacional"]) };
+                                Data data1 = new Data { name = Convert.ToString(d1["anho"]), y = Convert.ToDouble(d1["total_machos_nal"]) };
+                                Data data2 = new Data { name = Convert.ToString(d1["anho"]), y = Convert.ToDouble(d1["total_hembras_nal"]) };
 
                                 serie1.data.Add(data1);
                                 serie2.data.Add(data2);
@@ -1116,13 +1160,27 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             returnData = (Chart)chart1;
                             break;
                         case 2:
-                            string sql4 = @"SELECT base.departamento.nombre AS departamento,
-                                            pecuario.inventariobovinogrupo.anho AS anio,  
-                                            pecuario.inventariobovinogrupo.totalmachos AS machos,
-                                            pecuario.inventariobovinogrupo.totalhembras AS hembras
-                                            FROM pecuario.inventariobovinogrupo
-                                            INNER JOIN base.departamento ON base.departamento.codigo = pecuario.inventariobovinogrupo.codigodepto
-                                            WHERE inventariobovinogrupo.anho >= " + parameters.anio_inicial + " AND inventariobovinogrupo.anho <= " + parameters.anio_final + " AND base.departamento.nombre IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ") ORDER BY pecuario.inventariobovinogrupo.anho, base.departamento.nombre ASC";
+                            string sql4 = @"SELECT 
+                                          pi.anho as anio, 
+                                          pi.codigodepto as departamentocod, 
+                                          b.nombre as departamento, 
+                                          pi.codigoedadtipobovino, 
+                                          po.descripcion, 
+                                          SUM(pi.totalmachos) AS total_machos_depto,  
+                                          SUM(pi.totalhembras) AS total_hembras_depto
+                                        FROM 
+                                          pecuario.inventariobovinogrupo pi, 
+                                          base.departamento b, 
+                                          pecuario.orientacionbovino po
+                                        WHERE 
+                                          b.codigo = pi.codigodepto AND
+                                          po.codigo = pi.codigoedadtipobovino
+                                          /*PARAMETROS*/
+                                          AND pi.anho >= "+parameters.anio_inicial+@" AND pi.anho <= "+parameters.anio_final+@"
+                                          AND pi.codigodepto in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                        GROUP BY pi.anho, pi.codigodepto, b.nombre, pi.codigoedadtipobovino, 
+                                          po.descripcion
+                                        ORDER BY pi.anho, pi.codigoedadtipobovino";
 
                             DataTable results2 = adapter.GetDataTable(sql4);
                             Chart chart2 = new Chart { subtitle = "", series = new List<Series>() };
@@ -1138,7 +1196,7 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                                 var serie = new Series { name = deptoGroup.Key.ToString(), data = new List<Data>() };
                                 foreach (var anioGroup in deptoGroup)
                                 {
-                                    double y = anioGroup.Sum(d => Convert.ToDouble(d["machos"]));
+                                    double y = anioGroup.Sum(d => Convert.ToDouble(d["total_machos_depto"]));
                                     var data = new Data { name = Convert.ToString(anioGroup.Key.ToString()), y = y };
                                     serie.data.Add(data);
                                 }
@@ -1146,15 +1204,30 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             }
 
                             returnData = (Chart)chart2;
+
                             break;
                         case 3:
-                            string sql5 = @"SELECT base.departamento.nombre AS departamento,
-                                            pecuario.inventariobovinogrupo.anho AS anio,  
-                                            pecuario.inventariobovinogrupo.totalmachos AS machos,
-                                            pecuario.inventariobovinogrupo.totalhembras AS hembras
-                                            FROM pecuario.inventariobovinogrupo
-                                            INNER JOIN base.departamento ON base.departamento.codigo = pecuario.inventariobovinogrupo.codigodepto
-                                            WHERE pecuario.inventariobovinogrupo.anho >= " + parameters.anio_inicial + " AND pecuario.inventariobovinogrupo.anho <= " + parameters.anio_final + " AND base.departamento.nombre IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ") ORDER BY pecuario.inventariobovinogrupo.anho, base.departamento.nombre ASC";
+                            string sql5 = @"SELECT 
+                                          pi.anho as anio, 
+                                          pi.codigodepto as departamentocod, 
+                                          b.nombre as departamento, 
+                                          pi.codigoedadtipobovino, 
+                                          po.descripcion, 
+                                          SUM(pi.totalmachos) AS total_machos_depto,  
+                                          SUM(pi.totalhembras) AS total_hembras_depto
+                                        FROM 
+                                          pecuario.inventariobovinogrupo pi, 
+                                          base.departamento b, 
+                                          pecuario.orientacionbovino po
+                                        WHERE 
+                                          b.codigo = pi.codigodepto AND
+                                          po.codigo = pi.codigoedadtipobovino
+                                          /*PARAMETROS*/
+                                          AND pi.anho >= " + parameters.anio_inicial + @" AND pi.anho <= " + parameters.anio_final + @"
+                                          AND pi.codigodepto in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                        GROUP BY pi.anho, pi.codigodepto, b.nombre, pi.codigoedadtipobovino, 
+                                          po.descripcion
+                                        ORDER BY pi.anho, pi.codigoedadtipobovino";
 
                             DataTable results3 = adapter.GetDataTable(sql5);
                             Chart chart3 = new Chart { subtitle = "", series = new List<Series>() };
@@ -1170,7 +1243,7 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                                 var serie = new Series { name = deptoGroup.Key.ToString(), data = new List<Data>() };
                                 foreach (var anioGroup in deptoGroup)
                                 {
-                                    double y = anioGroup.Sum(d => Convert.ToDouble(d["hembras"]));
+                                    double y = anioGroup.Sum(d => Convert.ToDouble(d["total_hembras_depto"]));
                                     var data = new Data { name = Convert.ToString(anioGroup.Key.ToString()), y = y };
                                     serie.data.Add(data);
                                 }
@@ -1181,13 +1254,21 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             break;
 
                         case 4:
-                            string sql6 = @"SELECT pecuario.orientacionbovino.descripcion AS orientacion,
-                                            pecuario.inventariobovinoorientacion.anho AS anio,  
-                                            pecuario.inventariobovinoorientacion.total AS total_animales
-                                            FROM pecuario.inventariobovinoorientacion
-                                            INNER JOIN pecuario.orientacionbovino ON pecuario.orientacionbovino.codigo = pecuario.inventariobovinoorientacion.codigoorientacion
-                                            WHERE pecuario.inventariobovinoorientacion.anho >= 2003 AND pecuario.inventariobovinoorientacion.anho <= 2009
-                                            ORDER BY pecuario.orientacionbovino.descripcion, pecuario.inventariobovinoorientacion.anho";
+                            string sql6 = @"
+                                            SELECT 
+                                              pi.anho as anio, 
+                                              pi.codigoorientacion as orientacioncod, 
+                                              po.descripcion as orientacion, 
+                                              SUM(pi.total) as total_animales
+                                            FROM 
+                                              pecuario.inventariobovinoorientacion pi, 
+                                              pecuario.orientacionbovino po 
+                                            WHERE 
+                                              po.codigo = pi.codigoorientacion AND pi.anho >= "+parameters.anio_inicial+@" AND pi.anho <= "+parameters.anio_final+@"
+                                            GROUP BY pi.anho, pi.codigoorientacion, po.descripcion
+                                            ORDER BY pi.anho, 
+                                              pi.codigoorientacion
+                                            ";
                             
                             DataTable results4 = adapter.GetDataTable(sql6);
                             Chart chart4 = new Chart { subtitle = "", series = new List<Series>() };
@@ -1217,23 +1298,27 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     break;
                 case "tabla":
 
-                    string sql7 = @"SELECT	base.departamento.nombre AS departamento,
-                                    pecuario.orientacionbovino.descripcion AS descripcion,
-                                    pecuario.inventariobovinoorientacion.anho AS anio,  
-                                    pecuario.edadtipobovino.descripcion AS edad,
-                                    SUM(pecuario.inventariobovinogrupo.totalmachos) AS total_machos,
-                                    SUM(pecuario.inventariobovinogrupo.totalhembras) AS total_hembras
-                                    FROM base.departamento
-                                    INNER JOIN pecuario.inventariobovinogrupo ON base.departamento.codigo = pecuario.inventariobovinogrupo.codigodepto
-                                    INNER JOIN pecuario.edadtipobovino ON pecuario.edadtipobovino.codigo = pecuario.inventariobovinogrupo.codigoedadtipobovino
-                                    INNER JOIN pecuario.inventariobovinoorientacion ON base.departamento.codigo = pecuario.inventariobovinoorientacion.codigodepto
-                                    INNER JOIN pecuario.orientacionbovino ON pecuario.orientacionbovino.codigo = pecuario.inventariobovinoorientacion.codigoorientacion
-                                    WHERE pecuario.inventariobovinogrupo.anho >= " + parameters.anio_inicial + " AND pecuario.inventariobovinogrupo.anho <= " + parameters.anio_final + " AND base.departamento.nombre IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ") ";
-                            sql7 += @"GROUP BY base.departamento.nombre,
-                                    pecuario.orientacionbovino.codigo,
-                                    pecuario.inventariobovinoorientacion.anho,  
-                                    pecuario.edadtipobovino.codigo
-                                    ORDER BY base.departamento.nombre, pecuario.orientacionbovino.descripcion, pecuario.inventariobovinoorientacion.anho, pecuario.edadtipobovino.codigo";
+                    string sql7 = @"SELECT 
+                                    pi.anho as anio, 
+                                    pi.codigodepto as departamentocod, 
+                                    b.nombre as departamento, 
+                                    pi.codigoedadtipobovino as codigoedadbovino, 
+                                    po.descripcion as , 
+                                    SUM(pi.totalmachos) AS total_machos_depto,  
+                                    SUM(pi.totalhembras) AS total_hembras_depto
+                                FROM 
+                                    pecuario.inventariobovinogrupo pi, 
+                                    base.departamento b, 
+                                    pecuario.orientacionbovino po
+                                WHERE 
+                                    b.codigo = pi.codigodepto AND
+                                    po.codigo = pi.codigoedadtipobovino
+                                    /*PARAMETROS*/
+                                    AND pi.anho >= "+parameters.anio_inicial+@" AND pi.anho <= "+parameters.anio_final+@"
+                                    AND pi.codigodepto in " + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"
+                                GROUP BY pi.anho, pi.codigodepto, b.nombre, pi.codigoedadtipobovino, 
+                                    po.descripcion
+                                ORDER BY pi.anho, pi.codigoedadtipobovino"; 
 
                     switch (parameters.id)
                     {
