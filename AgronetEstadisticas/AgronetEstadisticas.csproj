@@ -191,6 +191,7 @@
     </Compile>
     <Compile Include="Models\Chart.cs" />
     <Compile Include="Models\Data.cs" />
+    <Compile Include="Models\IndiceEstacional.cs" />
     <Compile Include="Models\Parameters.cs" />
     <Compile Include="Models\parametersBinding\DownloadTable.cs" />
     <Compile Include="Models\parametersBinding\report.cs" />
