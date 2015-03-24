@@ -913,17 +913,28 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
             Object returnData = null;
             PostgresqlAdapter adapter = new PostgresqlAdapter();
 
-            string sqlString = @"SELECT base.departamento.codigo,
-                                    base.departamento.nombre as departamento,
-                                    eva_mpal.productos.codigoagronetcultivo,
-                                    eva_mpal.productos.nombredescriptorcultivo as producto,
-                                    COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva,
-                                    COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0) as area_eva,
-                                    COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0) as produccion_eva,
-                                    COALESCE((eva_mpal.evadepartamentalanual.produccion_eva/NULLIF(eva_mpal.evadepartamentalanual.area_eva,0)), 0) AS rendimiento
-                                    FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                    INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                    WHERE eva_mpal.evadepartamentalanual.anho_eva >= "+parameters.anio_inicial+" AND eva_mpal.evadepartamentalanual.anho_eva <= "+parameters.anio_final+" AND base.departamento.nombre = '"+parameters.departamento+"'";
+            string sqlString = @" SELECT 
+                                  v_evadepartamental.anho_eva, 
+                                  v_evadepartamental.codigoagronetproducto_eva, 
+                                  producto.descripcion as producto, 
+                                  v_evadepartamental.codigodepartamento_eva, 
+                                  departamento.nombre as departamento, 
+                                  v_evadepartamental.areacosechada_eva as area_eva, 
+                                  v_evadepartamental.produccion_eva as produccion_eva, 
+                                  v_evadepartamental.rendimiento_eva as rendimiento_eva
+  
+                                FROM 
+                                  eva_mpal.v_evadepartamental, 
+                                  base.departamento, 
+                                  eva_mpal.producto
+                                WHERE 
+                                  departamento.codigo::VARCHAR = v_evadepartamental.codigodepartamento_eva AND
+                                  producto.codigoagronetcultivo = v_evadepartamental.codigoagronetproducto_eva
+                                  /*PARAMETROS*/
+                                  AND v_evadepartamental.anho_eva >= "+parameters.anio_inicial+@" 
+                                  AND v_evadepartamental.anho_eva <= "+parameters.anio_final+@" 
+                                  AND departamento.codigo = "+parameters.departamento+@"
+                                ORDER BY v_evadepartamental.produccion_eva, v_evadepartamental.areacosechada_eva, v_evadepartamental.rendimiento_eva ";
             switch (parameters.tipo)
             {
                 case "parametro":
@@ -932,10 +943,18 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     {
                         case 1:
                             string sql1 = @"SELECT DISTINCT
-                                            COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva
-                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                            ORDER BY anho_eva asc";
+                                          v_evadepartamental.anho_eva as anho_eva
+  
+                                        FROM 
+                                          eva_mpal.v_evadepartamental, 
+                                          base.departamento, 
+                                          eva_mpal.producto
+                                        WHERE 
+                                          departamento.codigo::VARCHAR = v_evadepartamental.codigodepartamento_eva AND
+                                          producto.codigoagronetcultivo = v_evadepartamental.codigoagronetproducto_eva
+                                          /*PARAMETROS*/
+                                          AND departamento.codigo = "+parameters.departamento+@"
+                                        ORDER BY v_evadepartamental.anho_eva";
                             DataTable data1 = adapter.GetDataTable(sql1);
                             Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
                             foreach (var p in (from p in data1.AsEnumerable()
@@ -948,16 +967,24 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             break;
                         case 2:
                             string sql2 = @"SELECT DISTINCT
-                                            base.departamento.nombre
-                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                            ORDER BY base.departamento.nombre";
+                                          v_evadepartamental.codigodepartamento_eva as departamentocod, 
+                                          departamento.nombre as departamento
+  
+                                        FROM 
+                                          eva_mpal.v_evadepartamental, 
+                                          base.departamento, 
+                                          eva_mpal.producto
+                                        WHERE 
+                                          departamento.codigo::VARCHAR = v_evadepartamental.codigodepartamento_eva AND
+                                          producto.codigoagronetcultivo = v_evadepartamental.codigoagronetproducto_eva
+
+                                        ORDER BY departamento.nombre";
                             DataTable data2 = adapter.GetDataTable(sql2);
                             Parameter parameter2 = new Parameter { name = "departamento", data = new List<ParameterData>() };
                             foreach (var p in (from p in data2.AsEnumerable()
-                                               select p["nombre"]))
+                                               select p))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p["departamento"]).Trim(), value = Convert.ToString(p["departamentocod"]).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
