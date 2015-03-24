@@ -642,6 +642,50 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                             returnData = (Chart)chart1;
                             break;
                         case 2:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"SELECT DATEDIFF(ss, '01/01/1970', SipsaMensual.fecha_SipsaSemanal) as fechaunix, SipsaMensual.fecha_SipsaSemanal, SipsaMensual.precioPromedioSemanal_SipsaSemanal preciopromediosemanal, Sipsa_Productos.nombreProducto_ProductosSemanales, Sipsa_Mercados.nombreMercado_MercadosSem, Sipsa_UnidadesSemMen.nombreUnidad_SipsaUnidadesSemMen
+ FROM   ((AgronetSIPSA.dbo.SipsaSemanal SipsaMensual 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_MercadosSem Sipsa_Mercados 
+ ON SipsaMensual.codMercado_SipsaSemanal=Sipsa_Mercados.codMercado_MercadosSem) 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_ProductosSemanales Sipsa_Productos 
+ ON SipsaMensual.codProducto_SipsaSemanal=Sipsa_Productos.codigoProducto_ProductosSemanales) 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_UnidadesSemMen Sipsa_UnidadesSemMen 
+ ON SipsaMensual.codUnidad_SipsaSemanal=Sipsa_UnidadesSemMen.codUnidad_SipsaUnidadesSemMen
+ WHERE SipsaMensual.fecha_SipsaSemanal between '{0}' and '{1}'
+ and Sipsa_Productos.codigoProducto_ProductosSemanales = {2}
+ and Sipsa_Mercados.codMercado_MercadosSem in (" + string.Join(",",parameters.mercado.Select(d => d)) + @")
+ ORDER BY Sipsa_Mercados.nombreMercado_MercadosSem, SipsaMensual.fecha_SipsaSemanal;", parameters.fecha_inicial, parameters.fecha_final, parameters.producto));
+
+                            Chart chart2 = new Chart { subtitle = "Promedio móvil semanal (52 periodos)", series = new List<Series>() };
+                            Series serie1 = new Series { name = "Índice", data = new List<Data>() };
+
+                            Dictionary<int, Double> pm = new Dictionary<int, Double>();
+                            List<IndiceEstacional> ie = new List<IndiceEstacional>();
+                            var periodo = 1;
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                select d))
+                            {
+                                Double precio = Convert.ToDouble(d1["preciopromediosemanal"]);
+                                DateTime fechaSemanal = Convert.ToDateTime(d1["fecha_SipsaSemanal"]);
+                                Double promedioMovil = 0;
+
+                                pm.Add(periodo, precio);
+                                if (12 >= periodo)
+                                {
+                                    promedioMovil = pm.Select(x => x.Value).Sum() / periodo;
+                                }
+                                else
+                                {
+                                    promedioMovil = pm.Where(x => x.Key > periodo - 12 && x.Key <= periodo).Select(x => x.Value).Sum() / 12;
+                                }
+                                periodo++;
+                                ie.Add(new IndiceEstacional { fechaSemanal = fechaSemanal, precioSobrePromedioMovil = precio / promedioMovil });
+                                Double ieResult = ie.Where(x => x.fechaSemanal.Month == fechaSemanal.Month).Select(x => x.precioSobrePromedioMovil).Average();
+
+                                Data data1 = new Data { name = Convert.ToString(d1["fechaunix"]), y = ieResult };
+                                serie1.data.Add(data1);
+                            }
+                            chart2.series.Add(serie1);
+                            returnData = (Chart)chart2;
                             break;
                     }
                     break;
@@ -649,10 +693,21 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"SELECT SipsaMensual.fecha_SipsaSemanal, Sipsa_Mercados.nombreMercado_MercadosSem, Sipsa_Productos.nombreProducto_ProductosSemanales, SipsaMensual.precioPromedioSemanal_SipsaSemanal preciopromediosemanal, Sipsa_UnidadesSemMen.nombreUnidad_SipsaUnidadesSemMen
+ FROM   ((AgronetSIPSA.dbo.SipsaSemanal SipsaMensual 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_MercadosSem Sipsa_Mercados 
+ ON SipsaMensual.codMercado_SipsaSemanal=Sipsa_Mercados.codMercado_MercadosSem) 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_ProductosSemanales Sipsa_Productos 
+ ON SipsaMensual.codProducto_SipsaSemanal=Sipsa_Productos.codigoProducto_ProductosSemanales) 
+ INNER JOIN AgronetSIPSA.dbo.Sipsa_UnidadesSemMen Sipsa_UnidadesSemMen 
+ ON SipsaMensual.codUnidad_SipsaSemanal=Sipsa_UnidadesSemMen.codUnidad_SipsaUnidadesSemMen
+ WHERE SipsaMensual.fecha_SipsaSemanal between '{0}' and '{1}'
+ and Sipsa_Productos.codigoProducto_ProductosSemanales = {2}
+ and Sipsa_Mercados.codMercado_MercadosSem in (" + string.Join(",", parameters.mercado.Select(d => d)) + @")
+ ORDER BY Sipsa_Mercados.nombreMercado_MercadosSem, SipsaMensual.fecha_SipsaSemanal;", parameters.fecha_inicial, parameters.fecha_final, parameters.producto));
+
+                            Table table = new Table { rows = results1 };
+                            returnData = (Table)table;                           
                             break;
                     }
                     break;
