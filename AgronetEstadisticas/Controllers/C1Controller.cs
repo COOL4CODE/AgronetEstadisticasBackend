@@ -1344,13 +1344,26 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
         {
             Object returnData = null;
 
-            string sqlString = @"SELECT base.departamento.nombre AS departamento_nombre, 
-                                pecuario.produccionpecuaria.periodo,
-                                COALESCE(pecuario.produccionpecuaria.produccion, 0) as produccion_pecuaria, 
-                                pecuario.produccionpecuaria.unidad
-                                FROM pecuario.producto INNER JOIN pecuario.produccionpecuaria ON pecuario.producto.codigo = pecuario.produccionpecuaria.producto
-                                INNER JOIN base.departamento ON base.departamento.codigo = pecuario.produccionpecuaria.departamento
-                                WHERE pecuario.produccionpecuaria.periodo >= "+parameters.anio_inicial+" AND pecuario.produccionpecuaria.periodo <= "+parameters.anio_final+" AND pecuario.producto.codigo = "+parameters.tipo_pecuario+" AND base.departamento.nombre IN ("+ string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) +") ORDER BY base.departamento.nombre, pecuario.produccionpecuaria.periodo";
+            string sqlString = @"SELECT 
+                              pp.producto, 	
+                              p.nombre, 
+                              pp.periodo as periodo, 
+                              pp.departamento as departamentocod, 
+                              b.nombre as departamento_nombre,
+                              pp.produccion as produccion_pecuaria, 
+                              pp.unidad 
+
+                            FROM 
+                              pecuario.produccionpecuaria pp, 
+                              pecuario.producto p, 
+                              base.departamento b
+                            WHERE 
+                              p.codigo = pp.producto AND
+                              b.codigo = pp.departamento
+                              /*PARAMETROS*/	
+                              AND pp.producto = "+parameters.tipo_pecuario+@" AND pp.periodo >= "+parameters.anio_inicial+@" 
+                              AND pp.periodo <= "+parameters.anio_final+@"
+                              AND pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) +") ";
 
             PostgresqlAdapter adapter = new PostgresqlAdapter();
             switch (parameters.tipo)
@@ -1360,11 +1373,20 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     switch (parameters.id)
                     {
                         case 1:
-                            string sql1 = @"SELECT DISTINCT 
-                                            pecuario.produccionpecuaria.periodo
-                                            FROM pecuario.producto INNER JOIN pecuario.produccionpecuaria ON pecuario.producto.codigo = pecuario.produccionpecuaria.producto
-                                            INNER JOIN base.departamento ON base.departamento.codigo = pecuario.produccionpecuaria.departamento
-                                            ORDER BY pecuario.produccionpecuaria.periodo asc";
+                            string sql1 = @"SELECT DISTINCT
+                                          pp.periodo
+
+                                        FROM 
+                                          pecuario.produccionpecuaria pp, 
+                                          pecuario.producto p, 
+                                          base.departamento b
+                                        WHERE 
+                                          p.codigo = pp.producto AND
+                                          b.codigo = pp.departamento AND 
+                                          /*PARAMETROS*/	
+                                          pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) +@") ORDER BY pp.periodo";
+                                        
+
                             DataTable data1 = adapter.GetDataTable(sql1);
                             Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
                             foreach (var p in (from p in data1.AsEnumerable()
@@ -1376,31 +1398,45 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             returnData = (Parameter)parameter1;
                             break;
                         case 2:
-                            string sql2 = @"SELECT DISTINCT
-                                            pecuario.producto.codigo, 
-                                            pecuario.producto.nombre, 
-                                            base.departamento.codigo AS departamento_codigo, 
-                                            base.departamento.nombre AS departamento_nombre 
-                                            FROM pecuario.producto INNER JOIN pecuario.produccionpecuaria ON pecuario.producto.codigo = pecuario.produccionpecuaria.producto
-                                            INNER JOIN base.departamento ON base.departamento.codigo = pecuario.produccionpecuaria.departamento
-                                            WHERE pecuario.producto.codigo = " + parameters.tipo_pecuario + " ORDER BY base.departamento.codigo";
+                            string sql2 = @"SELECT DISTINCT 
+                                          pp.departamento as departamentocod, 
+                                          b.nombre as departamento
+                                        FROM 
+                                          pecuario.produccionpecuaria pp, 
+                                          pecuario.producto p, 
+                                          base.departamento b
+                                        WHERE 
+                                          p.codigo = pp.producto AND
+                                          b.codigo = pp.departamento AND 
+                                          /*PARAMETROS*/	
+                                          pp.producto = "+parameters.tipo_pecuario+@"
+                                        ORDER BY b.nombre
+";
                             DataTable data2 = adapter.GetDataTable(sql2);
                             Parameter parameter2 = new Parameter { name = "departamento", data = new List<ParameterData>() };
                             foreach (var p in (from p in data2.AsEnumerable()
-                                               select p["departamento_nombre"]))
+                                               select p))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p["departamento"]).Trim(), value = Convert.ToString(p["departamentocod"]).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
                             break;
                         case 3:
-                            string sql3 = @"SELECT DISTINCT
-                                            pecuario.producto.codigo, 
-                                            pecuario.producto.nombre
-                                            FROM pecuario.producto INNER JOIN pecuario.produccionpecuaria ON pecuario.producto.codigo = pecuario.produccionpecuaria.producto
-                                            INNER JOIN base.departamento ON base.departamento.codigo = pecuario.produccionpecuaria.departamento
-                                            ORDER BY pecuario.producto.nombre";
+                            string sql3 = @"
+                                            SELECT DISTINCT
+                                              pp.producto  as codigo, 	
+                                              p.nombre as nombre
+
+                                            FROM 
+                                              pecuario.produccionpecuaria pp, 
+                                              pecuario.producto p, 
+                                              base.departamento b
+                                            WHERE 
+                                              p.codigo = pp.producto AND
+                                              b.codigo = pp.departamento
+                                            ORDER BY p.nombre
+";
                             DataTable data3 = adapter.GetDataTable(sql3);
                             Parameter parameter3 = new Parameter { name = "tipo_pecuario", data = new List<ParameterData>() };
                             foreach (var p in (from p in data3.AsEnumerable()
@@ -1447,10 +1483,28 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     break;
                 case "tabla":
 
+                    String sqlTable = @"SELECT 
+                                              p.nombre, 
+                                              pp.periodo, 
+                                              b.nombre,
+                                              pp.produccion as produccionToneladas
+
+                                            FROM 
+                                              pecuario.produccionpecuaria pp, 
+                                              pecuario.producto p, 
+                                              base.departamento b
+                                            WHERE 
+                                              p.codigo = pp.producto AND
+                                              b.codigo = pp.departamento AND 
+                                              /*PARAMETROS*/	
+                                              pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) +@") 
+                                              AND pp.producto = " + parameters.tipo_pecuario + @" 
+                                              AND pp.periodo >= " + parameters.anio_inicial + @" AND pp.periodo <= " + parameters.anio_final + "";
                     switch (parameters.id)
                     {
+
                         case 1:
-                            Table table = new Table { rows = adapter.GetDataTable(sqlString) };
+                            Table table = new Table { rows = adapter.GetDataTable(sqlTable) };
                             returnData = (Table)table;
                             break;
                     }
