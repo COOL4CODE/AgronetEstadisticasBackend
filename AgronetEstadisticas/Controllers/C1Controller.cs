@@ -780,54 +780,54 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
             PostgresqlAdapter adapter = new PostgresqlAdapter();
 
             string sqlString = @"SELECT 
-  ev.anho_eva, 
-  ev.codigoagronetproducto_eva, 
-  ep.descripcion as nombredescriptorcultivo, 
-  ev.codigodepartamento_eva, 
-  b.nombre as nombre, 
-  ev.areacosechada_eva as area_eva,
-  /* area / total area nacional*/  
-  (SUM(ev.produccion_eva)/(
-	SELECT 
-		SUM(eva_mpal.v_evadepartamental.areacosechada_eva)
-	FROM eva_mpal.v_evadepartamental INNER JOIN eva_mpal.v_productodetalle ON eva_mpal.v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
-	WHERE eva_mpal.v_evadepartamental.anho_eva = eva_mpal.v_evadepartamental.anho_eva 
-		AND eva_mpal.v_productodetalle.codigoagronetproducto = ev.codigoagronetproducto_eva AND eva_mpal.v_evadepartamental.anho_eva = ev.anho_eva
-	GROUP BY eva_mpal.v_evadepartamental.anho_eva
-	ORDER BY eva_mpal.v_evadepartamental.anho_eva ASC
-  )) as participacion_area_nacional, 
-  ev.produccion_eva as produccion_eva,
-  /* prod depto / total prod nacional*/ 
-  (SUM(ev.produccion_eva)/(
-	SELECT 
-		SUM(eva_mpal.v_evadepartamental.produccion_eva)
-	FROM eva_mpal.v_evadepartamental INNER JOIN eva_mpal.v_productodetalle ON eva_mpal.v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
-	WHERE eva_mpal.v_evadepartamental.anho_eva = eva_mpal.v_evadepartamental.anho_eva 
-		AND eva_mpal.v_productodetalle.codigoagronetproducto = ev.codigoagronetproducto_eva AND eva_mpal.v_evadepartamental.anho_eva = ev.anho_eva
-	GROUP BY eva_mpal.v_evadepartamental.anho_eva
-	ORDER BY eva_mpal.v_evadepartamental.anho_eva ASC
-  )) as participacion_prod_nacional, 
-  ev.rendimiento_eva as rendimiento_eva
+                                  ev.anho_eva, 
+                                  ev.codigoagronetproducto_eva, 
+                                  ep.descripcion as nombredescriptorcultivo, 
+                                  ev.codigodepartamento_eva, 
+                                  b.nombre as nombre, 
+                                  ev.areacosechada_eva as area_eva,
+                                  /* area / total area nacional*/  
+                                  (SUM(ev.produccion_eva)/(
+	                                SELECT 
+		                                SUM(eva_mpal.v_evadepartamental.areacosechada_eva)
+	                                FROM eva_mpal.v_evadepartamental INNER JOIN eva_mpal.v_productodetalle ON eva_mpal.v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
+	                                WHERE eva_mpal.v_evadepartamental.anho_eva = eva_mpal.v_evadepartamental.anho_eva 
+		                                AND eva_mpal.v_productodetalle.codigoagronetproducto = ev.codigoagronetproducto_eva AND eva_mpal.v_evadepartamental.anho_eva = ev.anho_eva
+	                                GROUP BY eva_mpal.v_evadepartamental.anho_eva
+	                                ORDER BY eva_mpal.v_evadepartamental.anho_eva ASC
+                                  )) as participacion_area_nacional, 
+                                  ev.produccion_eva as produccion_eva,
+                                  /* prod depto / total prod nacional*/ 
+                                  (SUM(ev.produccion_eva)/(
+	                                SELECT 
+		                                SUM(eva_mpal.v_evadepartamental.produccion_eva)
+	                                FROM eva_mpal.v_evadepartamental INNER JOIN eva_mpal.v_productodetalle ON eva_mpal.v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
+	                                WHERE eva_mpal.v_evadepartamental.anho_eva = eva_mpal.v_evadepartamental.anho_eva 
+		                                AND eva_mpal.v_productodetalle.codigoagronetproducto = ev.codigoagronetproducto_eva AND eva_mpal.v_evadepartamental.anho_eva = ev.anho_eva
+	                                GROUP BY eva_mpal.v_evadepartamental.anho_eva
+	                                ORDER BY eva_mpal.v_evadepartamental.anho_eva ASC
+                                  )) as participacion_prod_nacional, 
+                                  ev.rendimiento_eva as rendimiento_eva
   
-FROM 
-  eva_mpal.v_evadepartamental ev, 
-  base.departamento b, 
-  eva_mpal.producto ep
-WHERE 
-  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
-  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
-  /*PARAMETROS*/
-  AND ev.anho_eva = 2003
-  AND ev.codigoagronetproducto_eva = 111030920256
-GROUP BY
-	ev.anho_eva, ev.codigoagronetproducto_eva,
-	ep.descripcion, 
-	ev.codigodepartamento_eva, 
-	b.nombre,
-	ev.areacosechada_eva,
-	ev.produccion_eva,
-	ev.rendimiento_eva	
-ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
+                                FROM 
+                                  eva_mpal.v_evadepartamental ev, 
+                                  base.departamento b, 
+                                  eva_mpal.producto ep
+                                WHERE 
+                                  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+                                  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+                                  /*PARAMETROS*/
+                                  AND ev.anho_eva = 2003
+                                  AND ev.codigoagronetproducto_eva = 111030920256
+                                GROUP BY
+	                                ev.anho_eva, ev.codigoagronetproducto_eva,
+	                                ep.descripcion, 
+	                                ev.codigodepartamento_eva, 
+	                                b.nombre,
+	                                ev.areacosechada_eva,
+	                                ev.produccion_eva,
+	                                ev.rendimiento_eva	
+                                ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
 
             switch (parameters.tipo)
             {
