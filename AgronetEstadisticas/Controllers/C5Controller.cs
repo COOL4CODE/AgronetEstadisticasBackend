@@ -768,7 +768,7 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                             DataTable data3 = adapter.GetDatatable(@"SELECT DISTINCT YEAR(Fecha_PreciosMensual) as fecha
                                                                         FROM AgronetPesca.dbo.Pesca_PreciosPescadoMensual 
                                                                         ORDER BY YEAR(Fecha_PreciosMensual);");
-                            Parameter param3 = new Parameter { name = "mercados", data = new List<ParameterData>() };
+                            Parameter param3 = new Parameter { name = "fecha", data = new List<ParameterData>() };
                             foreach (var d in (from p in data3.AsEnumerable() select p))
                             {
                                 ParameterData parameter = new ParameterData { name = Convert.ToString(d["fecha"]), value = Convert.ToString(d["fecha"]) };
@@ -976,7 +976,7 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                         case 3:
                             String sql3 = @"SELECT [codigoMunicipio],[nombreMunicipio] FROM [AgronetSIPSA].[dbo].[Abastecimiento_Ciudades] ORDER BY 2;";
                             DataTable data3 = adapter.GetDatatable(sql3);
-                            Parameter param3 = new Parameter { name = "grupos", data = new List<ParameterData>() };
+                            Parameter param3 = new Parameter { name = "ciudades", data = new List<ParameterData>() };
                             foreach (var d in (from p in data3.AsEnumerable() select p))
                             {
                                 ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombreMunicipio"]), value = Convert.ToString(d["codigoMunicipio"]) };
@@ -1275,21 +1275,66 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data1 = adapter.GetDatatable(@"SELECT  distinct   
+                                                                    [AgronetSIPSA].dbo.Insumos_Productos.producto_InsumosProductos as descripcion,
+                                                                    [AgronetSIPSA].dbo.Insumos_Productos.codProducto_InsumosProductos as  codigo
+                                                                    FROM  [AgronetSIPSA].dbo.Insumos_Productos 
+                                                                    INNER JOIN [AgronetSIPSA].dbo.Insumos_Precios ON [AgronetSIPSA].dbo.Insumos_Productos.codProducto_InsumosProductos = [AgronetSIPSA].dbo.Insumos_Precios.codProducto_InsumosPrecios 
+                                                                    ORDER BY producto_InsumosProductos;");
+                            Parameter param1 = new Parameter { name = "productos", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
+                            DataTable data2 = adapter.GetDatatable(string.Format(@"SELECT  distinct   [AgronetSIPSA].dbo.Insumos_Unidad.codUnidad_InsumosUnidad as codigo,
+                                                                                [AgronetSIPSA].dbo.Insumos_Unidad.unidad_InsumosUnidad as descripcion
+                                                                                FROM [AgronetSIPSA].dbo.Insumos_Precios INNER JOIN
+                                                                                [AgronetSIPSA].dbo.Insumos_Unidad ON 
+                                                                                [AgronetSIPSA].dbo.Insumos_Precios.codUnidad_InsumosPrecios = [AgronetSIPSA].dbo.Insumos_Unidad.codUnidad_InsumosUnidad
+                                                                                WHERE [AgronetSIPSA].dbo.Insumos_Precios.codProducto_InsumosPrecios = {0};", parameters.producto));
+                            Parameter param2 = new Parameter { name = "unidades", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
                         case 3:
+                            DataTable data3 = adapter.GetDatatable(string.Format(@"SELECT DISTINCT 
+                                                                                [AgronetSIPSA].dbo.Insumos_Departamentos.codigoDepartamento_InsumosDepto AS codigo, 
+                                                                                [AgronetSIPSA].dbo.Insumos_Departamentos.departamento_InsumosDepto AS descripcion 
+                                                                                FROM [AgronetSIPSA].dbo.Insumos_Departamentos 
+                                                                                INNER JOIN [AgronetSIPSA].dbo.Insumos_Precios 
+                                                                                ON [AgronetSIPSA].dbo.Insumos_Departamentos.codigoDepartamento_InsumosDepto = [AgronetSIPSA].dbo.Insumos_Precios.codigoDepartamento_InsumosPrecios 
+                                                                                WHERE [AgronetSIPSA].dbo.Insumos_Precios.codProducto_InsumosPrecios = {0} ORDER BY descripcion;", parameters.producto));
+                            Parameter param3 = new Parameter { name = "regiones", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data3.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param3.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param3;
                             break;
-                    }
-                    break;
-                case "grafico":
-                    switch (parameters.id)
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                        case 4:
+                            DataTable data4 = adapter.GetDatatable(@"SELECT DISTINCT YEAR(fecha_InsumosPrecios) as fecha 
+                                                                    FROM  [AgronetSIPSA].dbo.Insumos_Precios
+                                                                    ORDER BY YEAR(fecha_InsumosPrecios);");
+                            Parameter param4 = new Parameter { name = "fecha", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data4.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["fecha"]), value = Convert.ToString(d["fecha"]) };
+                                param4.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param4;
                             break;
                     }
                     break;
@@ -1297,10 +1342,64 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_VARIACION_INSUMOS(
+	                                                                                    codproducto int ,
+	                                                                                    codmunicipio int,
+	                                                                                    coddepto int,
+	                                                                                    codunidad int,
+	                                                                                    anho int,
+	                                                                                    mes int,
+	                                                                                    valor1 int,
+	                                                                                    valor2 int,
+	                                                                                    variacion float
+                                                                                    )
+                                                                                    INSERT INTO #SP_VARIACION_INSUMOS EXEC  [AgronetSIPSA].[dbo].[SP_VARIACION_INSUMOS]
+		                                                                                    @FECHA_INICIAL = N'{0}-01-01',
+		                                                                                    @FECHA_FINAL = N'{1}-12-31',
+		                                                                                    @DEPARTAMENTO = {2},
+		                                                                                    @PRODUCTO = {3},
+		                                                                                    @UNIDAD = {4}
+
+                                                                                    SELECT 
+                                                                                    mes_InsumosPrecios , 
+                                                                                    Insumos_Precios.anho_InsumosPrecios, 
+                                                                                    Insumos_Municipio.municipio_InsumosMuni, 
+                                                                                    Insumos_Precios.precio_InsumosPrecios, 
+                                                                                    Insumos_Precios.codProducto_InsumosPrecios, 
+                                                                                    Insumos_Precios.codUnidad_InsumosPrecios, 
+                                                                                    Insumos_Productos.producto_InsumosProductos, 
+                                                                                    Insumos_Precios.codigoDepartamento_InsumosPrecios, 
+                                                                                    Insumos_Precios.codigoMunicipio_InsumosPrecios, 
+                                                                                    Insumos_Municipio.codigoDepartamento_InsumosMuni, 
+                                                                                    Insumos_Productos.idGrupo_InsumosProductos
+                                                                                        FROM   (AgronetSIPSA.dbo.Insumos_Precios Insumos_Precios 
+	                                                                                    INNER JOIN AgronetSIPSA.dbo.Insumos_Municipio Insumos_Municipio	
+	                                                                                    ON (Insumos_Precios.codigoMunicipio_InsumosPrecios=Insumos_Municipio.codigoMunicipio_InsumosMuni) 
+	                                                                                    AND (Insumos_Precios.codigoDepartamento_InsumosPrecios=Insumos_Municipio.codigoDepartamento_InsumosMuni)
+	                                                                                    ) 
+                                                                                    INNER JOIN AgronetSIPSA.dbo.Insumos_Productos Insumos_Productos 
+                                                                                    ON Insumos_Precios.codProducto_InsumosPrecios=Insumos_Productos.codProducto_InsumosProductos
+                                                                                    INNER JOIN #SP_VARIACION_INSUMOS 
+                                                                                    ON  #SP_VARIACION_INSUMOS.codproducto = Insumos_Precios.codProducto_InsumosPrecios
+                                                                                    and #SP_VARIACION_INSUMOS.coddepto = Insumos_Precios.codigoDepartamento_InsumosPrecios
+                                                                                    and #SP_VARIACION_INSUMOS.codmunicipio = Insumos_Precios.codigoMunicipio_InsumosPrecios
+                                                                                    and #SP_VARIACION_INSUMOS.anho = Insumos_Precios.anho_InsumosPrecios
+                                                                                    and #SP_VARIACION_INSUMOS.codunidad = Insumos_Precios.codUnidad_InsumosPrecios
+                                                                                    WHERE  
+                                                                                        Insumos_Precios.codProducto_InsumosPrecios= {5} 
+                                                                                        AND Insumos_Precios.codUnidad_InsumosPrecios= {6} 
+                                                                                        AND Insumos_Precios.codigoDepartamento_InsumosPrecios= {7}
+                                                                                        ORDER BY Insumos_Municipio.municipio_InsumosMuni
+                                                                                        DROP TABLE #SP_VARIACION_INSUMOS", parameters.fecha_inicial,
+                                                                                                                         parameters.fecha_final,
+                                                                                                                         parameters.region,
+                                                                                                                         parameters.producto,
+                                                                                                                         parameters.unidad,
+                                                                                                                         parameters.producto,
+                                                                                                                         parameters.unidad,
+                                                                                                                         parameters.region));
+                            Table table = new Table { rows = results1 };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
@@ -1325,21 +1424,18 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
-                    }
-                    break;
-                case "grafico":
-                    switch (parameters.id)
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable data1 = adapter.GetDatatable(@"SELECT DISTINCT VW_Franjas.anho_FranjasArancel AS fecha
+                                                                        FROM   AgronetComercio.dbo.VW_Franjas VW_Franjas
+                                                                        WHERE  VW_Franjas.codigoTipoProducto_FranjasPrecios=1
+                                                                        ORDER BY VW_Franjas.anho_FranjasArancel;");
+                            Parameter param1 = new Parameter { name = "fecha", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["fecha"]), value = Convert.ToString(d["fecha"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                     }
                     break;
@@ -1347,10 +1443,20 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"SELECT VW_Franjas.anho_FranjasArancel, 
+                                                                                        VW_Franjas.mes_FranjasMeses, 
+                                                                                        VW_Franjas.quincena_FranjasArancel, 
+                                                                                        VW_Franjas.nombreFranja_Franjas, 
+                                                                                        VW_Franjas.precio_FranjasPrecios, 
+                                                                                        VW_Franjas.arancel_FranjasArancel, 
+                                                                                        VW_Franjas.numMes_FranjasMeses, 
+                                                                                        VW_Franjas.codigoTipoProducto_FranjasPrecios
+                                                                                        FROM   AgronetComercio.dbo.VW_Franjas VW_Franjas
+                                                                                        WHERE  VW_Franjas.codigoTipoProducto_FranjasPrecios=1
+                                                                                        AND VW_Franjas.anho_FranjasArancel = '{0}'
+                                                                                        ORDER BY VW_Franjas.nombreFranja_Franjas", parameters.anio));
+                            Table table = new Table { rows = results1 };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
@@ -1375,21 +1481,32 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data1 = adapter.GetDatatable(@"SELECT DISTINCT VW_Franjas.anho_FranjasArancel AS fecha
+                                                                        FROM   AgronetComercio.dbo.VW_Franjas VW_Franjas
+                                                                        WHERE  VW_Franjas.codigoTipoProducto_FranjasPrecios=1
+                                                                        ORDER BY VW_Franjas.anho_FranjasArancel;");
+                            Parameter param1 = new Parameter { name = "fecha", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["fecha"]), value = Convert.ToString(d["fecha"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
+                            Parameter param2 = new Parameter { name = "mes", data = new List<ParameterData>() };
+                            for (int mes = 1; mes <= 12; mes++)
+                                param2.data.Add(new ParameterData { name = Convert.ToString(mes), value = Convert.ToString(mes) });
+
+                            returnData = (Parameter)param2;
                             break;
                         case 3:
-                            break;
-                    }
-                    break;
-                case "grafico":
-                    switch (parameters.id)
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            Parameter param3 = new Parameter { name = "quincena", data = new List<ParameterData>() };
+                            param3.data.Add(new ParameterData { name = "1", value = "1" });
+                            param3.data.Add(new ParameterData { name = "2", value = "2" });
+
+                            returnData = (Parameter)param3;
                             break;
                     }
                     break;
@@ -1397,10 +1514,14 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"SELECT Franjas_Arancel.nandina_FranjasArancel, Franjas_Arancel.mes_FranjasArancel, Franjas_Arancel.quincena_FranjasArancel, Franjas_Arancel.anho_FranjasArancel, Franjas_TipoProducto.nombreTipoProducto_FranjasTipoProducto, Franjas.nombreFranja_Franjas, Franjas_Arancel.arancel_FranjasArancel, Franjas_Precios.precio_FranjasPrecios
+FROM   (AgronetComercio.dbo.Franjas_Precios Franjas_Precios FULL OUTER JOIN (AgronetComercio.dbo.Franjas Franjas INNER JOIN AgronetComercio.dbo.Franjas_Arancel Franjas_Arancel ON Franjas.codigoFranja_Franjas=Franjas_Arancel.codigoFranja_FranjasArancel) ON (((Franjas_Precios.nandina_FranjasPrecios=Franjas_Arancel.nandina_FranjasArancel) AND (Franjas_Precios.mes_FranjasPrecios=Franjas_Arancel.mes_FranjasArancel)) AND (Franjas_Precios.quincena_FranjasPrecios=Franjas_Arancel.quincena_FranjasArancel)) AND (Franjas_Precios.anho_FranjasPrecios=Franjas_Arancel.anho_FranjasArancel)) INNER JOIN AgronetComercio.dbo.Franjas_TipoProducto Franjas_TipoProducto ON Franjas_Arancel.codigoTipoProducto_FranjasArancel=Franjas_TipoProducto.codigoTipoProducto_FranjasTipoProducto
+WHERE  Franjas_TipoProducto.nombreTipoProducto_FranjasTipoProducto=N'Producto Marcador'
+AND Franjas_Arancel.mes_FranjasArancel = {0}
+AND Franjas_Arancel.quincena_FranjasArancel = {1}
+AND Franjas_Arancel.anho_FranjasArancel = {2}", parameters.mes, parameters.quincena, parameters.anio));
+                            Table table = new Table { rows = results1 };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
@@ -1425,10 +1546,30 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data1 = adapter.GetDatatable(@"select distinct YEAR(fecha_FertilizantesPrecios) anio
+                                                                    from [AgronetProyecciones].dbo.Proyecciones_FertilizantesPrecios
+                                                                    order by YEAR(fecha_FertilizantesPrecios);");
+                            Parameter param1 = new Parameter { name = "fecha", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anio"]), value = Convert.ToString(d["anio"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
-                            break;
-                        case 3:
+                            DataTable data2 = adapter.GetDatatable(@"select codigoProducto_ProductosFertilizantes, producto_ProductosFertilizantes 
+                                                                        from [AgronetProyecciones].dbo.Proyecciones_FertilizantesProductos
+                                                                        where codigoProducto_ProductosFertilizantes <> 7;");
+                            Parameter param2 = new Parameter { name = "producto", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["producto_ProductosFertilizantes"]), value = Convert.ToString(d["codigoProducto_ProductosFertilizantes"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
                     }
                     break;
@@ -1436,10 +1577,38 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_PRECIOS_FERTILIZANTES (
+                                                                                        fecha date,
+                                                                                        codigoProducto int,
+                                                                                        precio int,
+                                                                                        variacionSemPrecio float
+                                                                                        ) 
+                                                                                        INSERT INTO #SP_PRECIOS_FERTILIZANTES EXEC [AgronetProyecciones].[dbo].[SP_PRECIOS_FERTILIZANTES]
+		                                                                                    --PARAMETROS
+		                                                                                    @Fecha_Inicial = N'{0}-01-01',
+		                                                                                    @Fecha_Final = N'{1}-12-31',
+		                                                                                    @Producto = {2}
+                                                                                        SELECT
+                                                                                        DATEDIFF(ss, '01/01/1970',#SP_PRECIOS_FERTILIZANTES.fecha) as fechaunix,
+                                                                                        #SP_PRECIOS_FERTILIZANTES.precio
+                                                                                        FROM   
+                                                                                        AgronetProyecciones.dbo.Proyecciones_FertilizantesProductos Proyecciones_FertilizantesProductos
+                                                                                    INNER JOIN  
+                                                                                    #SP_PRECIOS_FERTILIZANTES 
+                                                                                    ON #SP_PRECIOS_FERTILIZANTES.codigoProducto = Proyecciones_FertilizantesProductos.codigoProducto_ProductosFertilizantes
+                                                                                    DROP TABLE #SP_PRECIOS_FERTILIZANTES", parameters.fecha_inicial, parameters.fecha_final, parameters.producto));
+                            Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "$US/ton", data = new List<Data>() };
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d1["fechaunix"]), y = Convert.ToDouble(d1["precio"]) };
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+                        
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
@@ -1447,10 +1616,136 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
+                           DataTable results1 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_PRECIOS_FERTILIZANTES (
+                                                                                        fecha date,
+                                                                                        codigoProducto int,
+                                                                                        precio int,
+                                                                                        variacionSemPrecio float
+                                                                                        ) 
+                                                                                        INSERT INTO #SP_PRECIOS_FERTILIZANTES EXEC [AgronetProyecciones].[dbo].[SP_PRECIOS_FERTILIZANTES]
+		                                                                                    --PARAMETROS
+		                                                                                    @Fecha_Inicial = N'{0}-01-01',
+		                                                                                    @Fecha_Final = N'{1}-12-31',
+		                                                                                    @Producto = {2}
+                                                                                        SELECT
+                                                                                        DATEDIFF(ss, '01/01/1970',#SP_PRECIOS_FERTILIZANTES.fecha) as fechaunix,
+                                                                                        #SP_PRECIOS_FERTILIZANTES.fecha,
+                                                                                        #SP_PRECIOS_FERTILIZANTES.precio,
+                                                                                        ISNULL(#SP_PRECIOS_FERTILIZANTES.variacionSemPrecio,0) variacion,
+                                                                                        Proyecciones_FertilizantesProductos.Unidad_ProductosFertilizantes, 
+                                                                                        Proyecciones_FertilizantesProductos.producto_ProductosFertilizantes
+                                                                                        FROM   
+                                                                                        AgronetProyecciones.dbo.Proyecciones_FertilizantesProductos Proyecciones_FertilizantesProductos
+                                                                                    INNER JOIN  
+                                                                                    #SP_PRECIOS_FERTILIZANTES 
+                                                                                    ON #SP_PRECIOS_FERTILIZANTES.codigoProducto = Proyecciones_FertilizantesProductos.codigoProducto_ProductosFertilizantes
+                                                                                    DROP TABLE #SP_PRECIOS_FERTILIZANTES
+                                                                                    ", parameters.fecha_inicial, parameters.fecha_final, parameters.producto));
+                            Table table = new Table { rows = results1 };
+                            returnData = (Table)table;
+                            break;
+                    }
+                    break;
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/514")]
+        public IHttpActionResult postReport515(report514 parameters)
+        {
+            Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable data1 = adapter.GetDatatable(@"SELECT distinct [anho_Proyecciones] as codigo,  [anho_Proyecciones] as descripcion
+                                                                    FROM [AgronetProyecciones].[dbo].[Proyecciones_Fletes]
+                                                                    order by 1;");
+                            Parameter param1 = new Parameter { name = "anio", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
+                            DataTable data2 = adapter.GetDatatable(@"SELECT [codMunicipio_MunicipioOrigen] as codigo, [municipio_MunicipioOrigen] as descripcion
+                                                                        FROM [AgronetProyecciones].[dbo].[Proyecciones_MunicipiosOrigen] order by 2");
+                            Parameter param2 = new Parameter { name = "ciudad", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
-                        case 3:
+                    }
+                    break;
+                case "grafico":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"SELECT 
+                                        Proyecciones_Fletes.codOrigen_Proyecciones, 
+                                        Proyecciones_Fletes.anho_Proyecciones, 
+                                        Proyecciones_MunicipiosDestino.municipio_MunicipioDestino, 
+                                        Proyecciones_Fletes.flete_Proyecciones, 
+                                        Proyecciones_MunicipiosOrigen.municipio_MunicipioOrigen
+                                        FROM   
+                                        (AgronetProyecciones.dbo.Proyecciones_Fletes Proyecciones_Fletes 
+                                        INNER JOIN AgronetProyecciones.dbo.Proyecciones_MunicipiosDestino Proyecciones_MunicipiosDestino ON Proyecciones_Fletes.codDestino_Proyecciones=Proyecciones_MunicipiosDestino.codMunicipio_MunicipioDestino) 
+                                        INNER JOIN AgronetProyecciones.dbo.Proyecciones_MunicipiosOrigen Proyecciones_MunicipiosOrigen ON Proyecciones_Fletes.codOrigen_Proyecciones=Proyecciones_MunicipiosOrigen.codMunicipio_MunicipioOrigen
+                                        WHERE  
+                                        Proyecciones_Fletes.codOrigen_Proyecciones=N'{0}' 
+                                        AND Proyecciones_Fletes.anho_Proyecciones={1}
+                                        ORDER BY Proyecciones_MunicipiosDestino.municipio_MunicipioDestino", parameters.ciudad, parameters.anio));
+                            Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "$ por tonelada", data = new List<Data>() };
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d1["municipio_MunicipioDestino"]), y = Convert.ToDouble(d1["flete_Proyecciones"]) };
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+                        
+                            returnData = (Chart)chart1;
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"SELECT 
+                                        Proyecciones_Fletes.codOrigen_Proyecciones, 
+                                        Proyecciones_Fletes.anho_Proyecciones, 
+                                        Proyecciones_MunicipiosDestino.municipio_MunicipioDestino, 
+                                        Proyecciones_Fletes.flete_Proyecciones, 
+                                        Proyecciones_MunicipiosOrigen.municipio_MunicipioOrigen
+                                        FROM   
+                                        (AgronetProyecciones.dbo.Proyecciones_Fletes Proyecciones_Fletes 
+                                        INNER JOIN AgronetProyecciones.dbo.Proyecciones_MunicipiosDestino Proyecciones_MunicipiosDestino ON Proyecciones_Fletes.codDestino_Proyecciones=Proyecciones_MunicipiosDestino.codMunicipio_MunicipioDestino) 
+                                        INNER JOIN AgronetProyecciones.dbo.Proyecciones_MunicipiosOrigen Proyecciones_MunicipiosOrigen ON Proyecciones_Fletes.codOrigen_Proyecciones=Proyecciones_MunicipiosOrigen.codMunicipio_MunicipioOrigen
+                                        WHERE  
+                                        Proyecciones_Fletes.codOrigen_Proyecciones=N'{0}' 
+                                        AND Proyecciones_Fletes.anho_Proyecciones={1}
+                                        ORDER BY Proyecciones_MunicipiosDestino.municipio_MunicipioDestino", parameters.ciudad, parameters.anio));
+                            Table table = new Table { rows = results1 };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
@@ -1475,10 +1770,28 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data1 = adapter.GetDatatable(@"select distinct year(fecha_Existencias) anio from [AgronetIndicadores].dbo.Indicadores_Existencias
+                                                                        order by year(fecha_Existencias);");
+                            Parameter param1 = new Parameter { name = "anio", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anio"]), value = Convert.ToString(d["anio"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
-                            break;
-                        case 3:
+                            DataTable data2 = adapter.GetDatatable(@"SELECT [codigoProducto_ExistenciaProductos], [nombreProducto_ExistenciaProductos]
+                                                                        FROM [AgronetIndicadores].[dbo].[Indicadores_ExistenciaProductos];");
+                            Parameter param2 = new Parameter { name = "productos", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombreProducto_ExistenciaProductos"]), value = Convert.ToString(d["codigoProducto_ExistenciaProductos"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
                     }
                     break;
@@ -1486,10 +1799,30 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"SELECT 
+DATEDIFF(ss, '01/01/1970',Indicadores_Existencias.fecha_Existencias) as fechaunix,
+Indicadores_Existencias.fecha_Existencias, 
+Indicadores_Existencias.codigoProducto_Existencias,
+Indicadores_ExistenciaProductos.nombreProducto_ExistenciaProductos, 
+Indicadores_Existencias.valor_Existencias
+FROM   AgronetIndicadores.dbo.Indicadores_Existencias Indicadores_Existencias 
+INNER JOIN AgronetIndicadores.dbo.Indicadores_ExistenciaProductos Indicadores_ExistenciaProductos
+ON Indicadores_Existencias.codigoProducto_Existencias=Indicadores_ExistenciaProductos.codigoProducto_ExistenciaProductos
+WHERE
+Indicadores_Existencias.fecha_Existencias BETWEEN '{0}-01-01' AND '{1}-12-31'
+AND  Indicadores_Existencias.codigoProducto_Existencias = {2}", parameters.fecha_inicial, parameters.fecha_final, parameters.producto));
+                            Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
+
+                            Series serie1 = new Series { name = "ton", data = new List<Data>() };
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                select d))
+                            {
+                                Data data1 = new Data { name = Convert.ToString(d1["fechaunix"]), y = Convert.ToDouble(d1["valor_Existencias"]) };
+                                serie1.data.Add(data1);
+                            }
+                            chart1.series.Add(serie1);
+                        
+                            returnData = (Chart)chart1;
                             break;
                     }
                     break;
@@ -1497,10 +1830,18 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@"SELECT 
+Indicadores_Existencias.fecha_Existencias, 
+Indicadores_ExistenciaProductos.nombreProducto_ExistenciaProductos, 
+Indicadores_Existencias.valor_Existencias
+FROM   AgronetIndicadores.dbo.Indicadores_Existencias Indicadores_Existencias 
+INNER JOIN AgronetIndicadores.dbo.Indicadores_ExistenciaProductos Indicadores_ExistenciaProductos
+ON Indicadores_Existencias.codigoProducto_Existencias=Indicadores_ExistenciaProductos.codigoProducto_ExistenciaProductos
+WHERE
+Indicadores_Existencias.fecha_Existencias BETWEEN '{0}-01-01' AND '{1}-12-31'
+AND  Indicadores_Existencias.codigoProducto_Existencias = {2}", parameters.fecha_inicial, parameters.fecha_final, parameters.producto));
+                            Table table = new Table { rows = results1 };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
