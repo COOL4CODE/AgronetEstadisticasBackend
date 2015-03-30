@@ -48,8 +48,8 @@ namespace AgronetEstadisticas.Controllers
                             parameter.data.Add(param);
                         }
                         break;
-                    
-                    
+
+
                     case 2:
                         parameter.name = "anio";
                         string sql2 = @"SELECT DISTINCT
@@ -142,10 +142,10 @@ ORDER BY eva_mpal.v_productodetalle.nombrecomun
 	
 FROM eva_mpal.v_evadepartamental INNER JOIN base.v_departamento ON eva_mpal.v_evadepartamental.codigodepartamento_eva = base.v_departamento.codigo::VARCHAR
 	INNER JOIN eva_mpal.v_productodetalle ON eva_mpal.v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
-WHERE eva_mpal.v_evadepartamental.anho_eva >= " + parameters.anio_inicial+@" 
-	AND eva_mpal.v_evadepartamental.anho_eva <= "+parameters.anio_final+@"
-	AND eva_mpal.v_productodetalle.codigoagronetproducto = "+parameters.producto+@"
-	AND base.v_departamento.codigo = "+parameters.departamento+@"
+WHERE eva_mpal.v_evadepartamental.anho_eva >= " + parameters.anio_inicial + @" 
+	AND eva_mpal.v_evadepartamental.anho_eva <= " + parameters.anio_final + @"
+	AND eva_mpal.v_productodetalle.codigoagronetproducto = " + parameters.producto + @"
+	AND base.v_departamento.codigo = " + parameters.departamento + @"
 
 GROUP BY eva_mpal.v_evadepartamental.anho_eva, 
 		 base.v_departamento.nombre, 
@@ -158,7 +158,7 @@ GROUP BY eva_mpal.v_evadepartamental.anho_eva,
 		 eva_mpal.v_productodetalle.grupo,
 		 eva_mpal.v_productodetalle.codigogrupo
 
-ORDER BY eva_mpal.v_evadepartamental.anho_eva";  
+ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                 DataTable result = adapter.GetDataTable(sqlString1);
                 switch (parameters.id)
                 {
@@ -170,7 +170,7 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
 
                         chart1.series.Add(serie1);
                         chart1.series.Add(serie2);
-                        
+
                         foreach (var d1 in (from d in result.AsEnumerable()
                                             select d))
                         {
@@ -188,7 +188,7 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
 
                         Series serie3 = new Series { name = "Rendimiento", data = new List<Data>() };
                         chart2.series.Add(serie3);
-                        
+
                         foreach (var d1 in (from d in result.AsEnumerable()
                                             select d))
                         {
@@ -221,7 +221,7 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                         break;
                     case 4:
                         Chart chart4 = new Chart { subtitle = "", series = new List<Series>() };
-                        
+
                         Series serie6 = new Series { name = "Producción", data = new List<Data>() };
                         Series serie7 = new Series { name = "Área", data = new List<Data>() };
 
@@ -317,16 +317,17 @@ GROUP BY eva_mpal.v_evadepartamental.anho_eva,
 
 ORDER BY eva_mpal.v_evadepartamental.anho_eva";
 
-               switch (parameters.id)
-               {
-                   case 1:
-                       Table table = new Table { rows = adapter.GetDataTable(sqlString2) };
-                       returnData = (Table)table;
-                       break;
-               }
+                switch (parameters.id)
+                {
+                    case 1:
+                        Table table = new Table { rows = adapter.GetDataTable(sqlString2) };
+                        returnData = (Table)table;
+                        break;
+                }
             }
 
-            if (returnData == null) {
+            if (returnData == null)
+            {
                 return NotFound();
             }
 
@@ -337,8 +338,8 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
         public IHttpActionResult postReport102(report102 parameters)
         {
             Object returnData = null;
-            
-            var adapter = new PostgresqlAdapter();           
+
+            var adapter = new PostgresqlAdapter();
             switch (parameters.tipo)
             {
                 case "parametro":
@@ -390,13 +391,13 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
 	
                                         FROM eva_mpal.v_evadepartamental INNER JOIN base.v_departamento ON v_evadepartamental.codigodepartamento_eva = base.v_departamento.codigo::VARCHAR
 	                                        INNER JOIN eva_mpal.v_productodetalle ON v_evadepartamental.codigoagronetproducto_eva = eva_mpal.v_productodetalle.codigoagronetproducto
-                                        WHERE eva_mpal.v_evadepartamental.anho_eva >= "+parameters.anio_inicial+@" 
-	                                        AND eva_mpal.v_evadepartamental.anho_eva <= "+parameters.anio_final+@" 
-	                                        AND eva_mpal.v_productodetalle.codigoagronetproducto = "+parameters.producto+@"
+                                        WHERE eva_mpal.v_evadepartamental.anho_eva >= " + parameters.anio_inicial + @" 
+	                                        AND eva_mpal.v_evadepartamental.anho_eva <= " + parameters.anio_final + @" 
+	                                        AND eva_mpal.v_productodetalle.codigoagronetproducto = " + parameters.producto + @"
                                         GROUP BY 
 	                                        eva_mpal.v_evadepartamental.anho_eva
                                         ORDER BY eva_mpal.v_evadepartamental.anho_eva";
-                    
+
                     DataTable results = adapter.GetDataTable(sqlString1);
 
                     switch (parameters.id)
@@ -409,7 +410,7 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
 
                             chart1.series.Add(serie1);
                             chart1.series.Add(serie2);
-                        
+
                             foreach (var d1 in (from d in results.AsEnumerable()
                                                 select d))
                             {
@@ -430,7 +431,7 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
 
                             chart2.series.Add(serie3);
                             chart2.series.Add(serie4);
-                        
+
                             foreach (var d1 in (from d in results.AsEnumerable()
                                                 select d))
                             {
@@ -448,7 +449,7 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
 
                             Series serie5 = new Series { name = "Rendimiento", data = new List<Data>() };
                             chart3.series.Add(serie5);
-                        
+
                             foreach (var d1 in (from d in results.AsEnumerable()
                                                 select d))
                             {
@@ -482,14 +483,14 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                                 FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
 	                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
                                 WHERE eva_mpal.evadepartamentalanual.anho_eva >= " + parameters.anio_inicial + " AND eva_mpal.evadepartamentalanual.anho_eva <= " + parameters.anio_final + " AND eva_mpal.productos.nombredescriptorcultivo = '" + parameters.producto + "'";
-                    
+
                     switch (parameters.id)
                     {
                         case 1:
                             Table table = new Table { rows = adapter.GetDataTable(sqlString2) };
                             returnData = (Table)table;
                             break;
-                    }                    
+                    }
                     break;
             }
 
@@ -547,7 +548,7 @@ FROM
 WHERE
   b.codigo::VARCHAR = ev.codigodepartamento_eva AND
   ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
-  AND ev.codigoagronetproducto_eva = "+parameters.producto+@"
+  AND ev.codigoagronetproducto_eva = " + parameters.producto + @"
 ORDER BY b.nombre";
                             DataTable data2 = adapter.GetDataTable(sql2);
                             Parameter parameter2 = new Parameter { name = "departamento", data = new List<ParameterData>() };
@@ -569,7 +570,7 @@ ORDER BY b.nombre";
                                             WHERE
                                               b.codigo::VARCHAR = ev.codigodepartamento_eva AND
                                               ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
-                                              AND ev.codigoagronetproducto_eva = "+parameters.producto+@"
+                                              AND ev.codigoagronetproducto_eva = " + parameters.producto + @"
                                             ORDER BY ev.anho_eva;";
                             DataTable data3 = adapter.GetDataTable(sql3);
                             Parameter parameter3 = new Parameter { name = "anio", data = new List<ParameterData>() };
@@ -589,7 +590,7 @@ ORDER BY b.nombre";
                     switch (parameters.id)
                     {
                         case 1:
-                           
+
                             string sqlString = @"SELECT
   ev.anho_eva as anho_eva,
   ev.codigoagronetproducto_eva as productocod,
@@ -641,7 +642,7 @@ ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva d
                             break;
                         case 2:
 
-                            
+
                             string sqlString2 = @"SELECT
   ev.anho_eva,
   ev.codigoagronetproducto_eva,
@@ -815,8 +816,8 @@ ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva d
                               b.codigo::VARCHAR = ev.codigodepartamento_eva AND
                               ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
                               /*PARAMETROS*/
-                              AND ev.anho_eva >= "+parameters.anio_inicial+@" AND ev.anho_eva <= "+@parameters.anio_final+@"
-                              AND ev.codigoagronetproducto_eva = "+parameters.producto+@" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
+                              AND ev.anho_eva >= " + parameters.anio_inicial + @" AND ev.anho_eva <= " + @parameters.anio_final + @"
+                              AND ev.codigoagronetproducto_eva = " + parameters.producto + @" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
                             GROUP BY
                                 ev.anho_eva, ev.codigoagronetproducto_eva,
                                 ep.descripcion,
@@ -849,7 +850,7 @@ ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva d
                             break;
                         case 5:
 
-                              String sqlString5 = @"SELECT
+                            String sqlString5 = @"SELECT
   ev.anho_eva,
   ev.codigoagronetproducto_eva,
   ep.descripcion,
@@ -916,8 +917,8 @@ WHERE
   b.codigo::VARCHAR = ev.codigodepartamento_eva AND
   ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
   /*PARAMETROS*/
-  AND ev.anho_eva >= "+parameters.anio_inicial+@" AND ev.anho_eva <= "+@parameters.anio_final+@"
-  AND ev.codigoagronetproducto_eva = "+parameters.producto+@" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
+  AND ev.anho_eva >= " + parameters.anio_inicial + @" AND ev.anho_eva <= " + @parameters.anio_final + @"
+  AND ev.codigoagronetproducto_eva = " + parameters.producto + @" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
 GROUP BY
     ev.anho_eva, ev.codigoagronetproducto_eva,
     ep.descripcion,
@@ -1052,11 +1053,11 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
 
                             returnData = (Chart)chart6;
                             break;
-                        
+
                         case 7:
                             Chart chart7 = new Chart { subtitle = "", series = new List<Series>() };
 
-                              String sqlString7 = @"SELECT
+                            String sqlString7 = @"SELECT
   ev.anho_eva,
   ev.codigoagronetproducto_eva,
   ep.descripcion,
@@ -1123,8 +1124,8 @@ WHERE
   b.codigo::VARCHAR = ev.codigodepartamento_eva AND
   ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
   /*PARAMETROS*/
-  AND ev.anho_eva >= "+parameters.anio_inicial+@" AND ev.anho_eva <= "+@parameters.anio_final+@"
-  AND ev.codigoagronetproducto_eva = "+parameters.producto+@" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
+  AND ev.anho_eva >= " + parameters.anio_inicial + @" AND ev.anho_eva <= " + @parameters.anio_final + @"
+  AND ev.codigoagronetproducto_eva = " + parameters.producto + @" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
 GROUP BY
     ev.anho_eva, ev.codigoagronetproducto_eva,
     ep.descripcion,
@@ -1327,7 +1328,7 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                           b.codigo::VARCHAR = ev.codigodepartamento_eva AND
                                           ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
                                           /*PARAMETROS*/
-                                          AND ev.codigoagronetproducto_eva = "+parameters.producto+@"
+                                          AND ev.codigoagronetproducto_eva = " + parameters.producto + @"
                                         ORDER BY ev.anho_eva ";
                             DataTable data1 = adapter.GetDataTable(sql1);
                             Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
@@ -1457,9 +1458,9 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                   departamento.codigo::VARCHAR = v_evadepartamental.codigodepartamento_eva AND
                                   producto.codigoagronetcultivo = v_evadepartamental.codigoagronetproducto_eva
                                   /*PARAMETROS*/
-                                  AND v_evadepartamental.anho_eva >= "+parameters.anio_inicial+@" 
-                                  AND v_evadepartamental.anho_eva <= "+parameters.anio_final+@" 
-                                  AND departamento.codigo = "+parameters.departamento+@"
+                                  AND v_evadepartamental.anho_eva >= " + parameters.anio_inicial + @" 
+                                  AND v_evadepartamental.anho_eva <= " + parameters.anio_final + @" 
+                                  AND departamento.codigo = " + parameters.departamento + @"
                                 ORDER BY v_evadepartamental.produccion_eva, v_evadepartamental.areacosechada_eva, v_evadepartamental.rendimiento_eva ";
             switch (parameters.tipo)
             {
@@ -1479,7 +1480,7 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                           departamento.codigo::VARCHAR = v_evadepartamental.codigodepartamento_eva AND
                                           producto.codigoagronetcultivo = v_evadepartamental.codigoagronetproducto_eva
                                           /*PARAMETROS*/
-                                          AND departamento.codigo = "+parameters.departamento+@"
+                                          AND departamento.codigo = " + parameters.departamento + @"
                                         ORDER BY v_evadepartamental.anho_eva";
                             DataTable data1 = adapter.GetDataTable(sql1);
                             Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
@@ -1528,8 +1529,9 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
 
                             var query1 = from r in results.AsEnumerable()
                                          group r by r["departamento"] into deptoGroup
-                                         from productGroup in (from d in deptoGroup
-                                                               group d by d["producto"])
+                                         from productGroup in
+                                             (from d in deptoGroup
+                                              group d by d["producto"])
                                          group productGroup by deptoGroup.Key;
 
                             foreach (var deptoGroup in query1)
@@ -1551,8 +1553,9 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
 
                             var query2 = from r in results.AsEnumerable()
                                          group r by r["departamento"] into deptoGroup
-                                         from productGroup in (from d in deptoGroup
-                                                               group d by d["producto"])
+                                         from productGroup in
+                                             (from d in deptoGroup
+                                              group d by d["producto"])
                                          group productGroup by deptoGroup.Key;
 
                             foreach (var deptoGroup in query2)
@@ -1689,8 +1692,8 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                           AND inventariobovinogrupo.anho >= '" + parameters.anio_inicial + @"' AND inventariobovinogrupo.anho <= '" + parameters.anio_final + @"'
                                         GROUP BY inventariobovinogrupo.anho
                                         ORDER BY inventariobovinogrupo.anho";
-                    
-                            DataTable results1 = adapter.GetDataTable(sql3);                    
+
+                            DataTable results1 = adapter.GetDataTable(sql3);
 
                             Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
 
@@ -1699,7 +1702,7 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
 
                             chart1.series.Add(serie1);
                             chart1.series.Add(serie2);
-                        
+
                             foreach (var d1 in (from d in results1.AsEnumerable()
                                                 select d))
                             {
@@ -1729,7 +1732,7 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                           b.codigo = pi.codigodepto AND
                                           po.codigo = pi.codigoedadtipobovino
                                           /*PARAMETROS*/
-                                          AND pi.anho >= "+parameters.anio_inicial+@" AND pi.anho <= "+parameters.anio_final+@"
+                                          AND pi.anho >= " + parameters.anio_inicial + @" AND pi.anho <= " + parameters.anio_final + @"
                                           AND pi.codigodepto in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
                                         GROUP BY pi.anho, pi.codigodepto, b.nombre, pi.codigoedadtipobovino, 
                                           po.descripcion
@@ -1740,8 +1743,9 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
 
                             var query2 = from r in results2.AsEnumerable()
                                          group r by r["departamento"] into deptoGroup
-                                         from anioGroup in (from d in deptoGroup
-                                                               group d by d["anio"])
+                                         from anioGroup in
+                                             (from d in deptoGroup
+                                              group d by d["anio"])
                                          group anioGroup by deptoGroup.Key;
 
                             foreach (var deptoGroup in query2)
@@ -1787,8 +1791,9 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
 
                             var query3 = from r in results3.AsEnumerable()
                                          group r by r["departamento"] into deptoGroup
-                                         from anioGroup in (from d in deptoGroup
-                                                               group d by d["anio"])
+                                         from anioGroup in
+                                             (from d in deptoGroup
+                                              group d by d["anio"])
                                          group anioGroup by deptoGroup.Key;
 
                             foreach (var deptoGroup in query3)
@@ -1817,19 +1822,20 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                               pecuario.inventariobovinoorientacion pi, 
                                               pecuario.orientacionbovino po 
                                             WHERE 
-                                              po.codigo = pi.codigoorientacion AND pi.anho >= "+parameters.anio_inicial+@" AND pi.anho <= "+parameters.anio_final+@"
+                                              po.codigo = pi.codigoorientacion AND pi.anho >= " + parameters.anio_inicial + @" AND pi.anho <= " + parameters.anio_final + @"
                                             GROUP BY pi.anho, pi.codigoorientacion, po.descripcion
                                             ORDER BY pi.anho, 
                                               pi.codigoorientacion
                                             ";
-                            
+
                             DataTable results4 = adapter.GetDataTable(sql6);
                             Chart chart4 = new Chart { subtitle = "", series = new List<Series>() };
 
                             var query4 = from r in results4.AsEnumerable()
                                          group r by r["orientacion"] into orientacionGroup
-                                         from anioGroup in (from d in orientacionGroup
-                                                               group d by d["anio"])
+                                         from anioGroup in
+                                             (from d in orientacionGroup
+                                              group d by d["anio"])
                                          group anioGroup by orientacionGroup.Key;
 
                             foreach (var orientacionGroup in query4)
@@ -1867,11 +1873,11 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                     b.codigo = pi.codigodepto AND
                                     po.codigo = pi.codigoedadtipobovino
                                     /*PARAMETROS*/
-                                    AND pi.anho >= "+parameters.anio_inicial+@" AND pi.anho <= "+parameters.anio_final+@"
+                                    AND pi.anho >= " + parameters.anio_inicial + @" AND pi.anho <= " + parameters.anio_final + @"
                                     AND pi.codigodepto in " + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"
                                 GROUP BY pi.anho, pi.codigodepto, b.nombre, pi.codigoedadtipobovino, 
                                     po.descripcion
-                                ORDER BY pi.anho, pi.codigoedadtipobovino"; 
+                                ORDER BY pi.anho, pi.codigoedadtipobovino";
 
                     switch (parameters.id)
                     {
@@ -1914,9 +1920,9 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                               p.codigo = pp.producto AND
                               b.codigo = pp.departamento
                               /*PARAMETROS*/	
-                              AND pp.producto = "+parameters.tipo_pecuario+@" AND pp.periodo >= "+parameters.anio_inicial+@" 
-                              AND pp.periodo <= "+parameters.anio_final+@"
-                              AND pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) +") ";
+                              AND pp.producto = " + parameters.tipo_pecuario + @" AND pp.periodo >= " + parameters.anio_inicial + @" 
+                              AND pp.periodo <= " + parameters.anio_final + @"
+                              AND pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ") ";
 
             PostgresqlAdapter adapter = new PostgresqlAdapter();
             switch (parameters.tipo)
@@ -1937,8 +1943,8 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                           p.codigo = pp.producto AND
                                           b.codigo = pp.departamento AND 
                                           /*PARAMETROS*/	
-                                          pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) +@") ORDER BY pp.periodo";
-                                        
+                                          pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") ORDER BY pp.periodo";
+
 
                             DataTable data1 = adapter.GetDataTable(sql1);
                             Parameter parameter1 = new Parameter { name = "anio", data = new List<ParameterData>() };
@@ -1962,7 +1968,7 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                           p.codigo = pp.producto AND
                                           b.codigo = pp.departamento AND 
                                           /*PARAMETROS*/	
-                                          pp.producto = "+parameters.tipo_pecuario+@"
+                                          pp.producto = " + parameters.tipo_pecuario + @"
                                         ORDER BY b.nombre
 ";
                             DataTable data2 = adapter.GetDataTable(sql2);
@@ -2012,8 +2018,9 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
 
                             var query1 = from r in adapter.GetDataTable(sqlString).AsEnumerable()
                                          group r by r["departamento_nombre"] into deptoGroup
-                                         from anioGroup in (from d in deptoGroup
-                                                               group d by d["periodo"])
+                                         from anioGroup in
+                                             (from d in deptoGroup
+                                              group d by d["periodo"])
                                          group anioGroup by deptoGroup.Key;
 
                             foreach (var deptoGroup in query1)
@@ -2050,7 +2057,7 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                                               p.codigo = pp.producto AND
                                               b.codigo = pp.departamento AND 
                                               /*PARAMETROS*/	
-                                              pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) +@") 
+                                              pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") 
                                               AND pp.producto = " + parameters.tipo_pecuario + @" 
                                               AND pp.periodo >= " + parameters.anio_inicial + @" AND pp.periodo <= " + parameters.anio_final + "";
                     switch (parameters.id)
