@@ -11,6 +11,5 @@ namespace AgronetEstadisticas.Models.parametersBinding
 
         public DateTime fecha_final { get; set; }
 
-        public string grupo { get; set; }
     }
 }

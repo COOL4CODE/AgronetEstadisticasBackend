@@ -2267,40 +2267,66 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport419(report419 parameters)
         {
             Object returnData = null;
-            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            SQLAdapter adapter = new SQLAdapter();
             switch (parameters.tipo)
             {
-                case "parametro":
-                    switch (parameters.id)
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
-                    }
-                    break;
+                
                 case "grafico":
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
+
+                            
+
+                                break;
                         case 2:
                             break;
-                        case 3:
-                            break;
+                        
                     }
                     break;
                 case "tabla":
                     switch (parameters.id)
                     {
                         case 1:
+
+                            String sqlChart1 = @" SELECT 
+                                                 Indicadores_TRM.Fecha as fecha, 
+                                                Indicadores_TRM.Valor as valor
+                                                 FROM   
+                                                 AgronetIndicadores.dbo.Indicadores_TRM_Diario Indicadores_TRM_Diario 
+                                                 INNER JOIN AgronetIndicadores.dbo.Indicadores_TRM Indicadores_TRM 
+                                                 ON Indicadores_TRM_Diario.Fecha=Indicadores_TRM.Fecha
+                                                 WHERE  
+                                                 Indicadores_TRM.Fecha  BETWEEN '"+parameters.fecha_inicial+@"' AND '"+parameters.fecha_final+@"'";
+
+                            DataTable results = adapter.GetDatatable(sqlChart1);
+                            var queryResults = from r in results.AsEnumerable() select r;
+
+                            Table table = new Table { rows = new DataTable() };
+
+                            table.rows.Columns.Add("fecha", typeof(DateTime));
+                            table.rows.Columns.Add("valor", typeof(double));
+                            table.rows.Columns.Add("variacion", typeof(double));
+
+                            IEnumerable<double> valores = results.AsEnumerable().Select(x => x.Field<Double>("valor"));
+                            
+                            for (int i = 0; i < queryResults.Count(); i++) {
+
+                                if (i > 0)
+                                {
+                         
+                                    double variacion = valores.ElementAt(i) - valores.ElementAt(i-1);
+                                    table.rows.Rows.Add(queryResults.ElementAt(i)["fecha"],queryResults.ElementAt(i)["valor"],variacion);
+                                }
+                            
+                            }
+
+                            returnData  = (Table)table;
+
                             break;
                         case 2:
                             break;
-                        case 3:
-                            break;
+                        
                     }
                     break;
             }

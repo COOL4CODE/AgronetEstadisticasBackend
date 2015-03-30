@@ -516,43 +516,61 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     {
                         case 1:
                             string sql1 = @"SELECT DISTINCT
-                                            eva_mpal.productos.nombredescriptorcultivo
-                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                            ORDER BY nombredescriptorcultivo";
+                                            ev.codigoagronetproducto_eva as productocod,
+                                            ep.descripcion as producto
+                                            FROM
+                                            eva_mpal.v_evadepartamental ev,
+                                            base.departamento b,
+                                            eva_mpal.producto ep
+                                            WHERE
+                                            b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+                                            ep.codigoagronetcultivo = ev.codigoagronetproducto_eva";
                             DataTable data1 = adapter.GetDataTable(sql1);
                             Parameter parameter1 = new Parameter { name = "producto", data = new List<ParameterData>() };
                             foreach (var p in (from p in data1.AsEnumerable()
-                                               select p["nombredescriptorcultivo"]))
+                                               select p))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p["producto"]).Trim(), value = Convert.ToString(p["productocod"]).Trim() };
                                 parameter1.data.Add(param);
                             }
                             returnData = (Parameter)parameter1;
                             break;
                         case 2:
-                            string sql2 = String.Format(@"SELECT DISTINCT
-                                            base.departamento.nombre 
-                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                            WHERE  eva_mpal.productos.nombredescriptorcultivo = '{0}'
-                                            ORDER BY base.departamento.nombre asc", parameters.producto);
+                            string sql2 = @"SELECT DISTINCT
+  ev.codigodepartamento_eva as departamentocod,
+  b.nombre as departamento
+ 
+FROM
+  eva_mpal.v_evadepartamental ev,
+  base.departamento b,
+  eva_mpal.producto ep
+WHERE
+  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+  AND ev.codigoagronetproducto_eva = "+parameters.producto+@"
+ORDER BY b.nombre";
                             DataTable data2 = adapter.GetDataTable(sql2);
                             Parameter parameter2 = new Parameter { name = "departamento", data = new List<ParameterData>() };
                             foreach (var p in (from p in data2.AsEnumerable()
-                                               select p["nombre"]))
+                                               select p))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p).Trim(), value = Convert.ToString(p).Trim() };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p["departamento"]).Trim(), value = Convert.ToString(p["departamentocod"]).Trim() };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
                             break;
                         case 3:
                             string sql3 = @"SELECT DISTINCT
-                                            COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva
-                                            FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                            INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                            ORDER BY anho_eva asc";
+                                              ev.anho_eva as anho_eva
+                                            FROM
+                                              eva_mpal.v_evadepartamental ev,
+                                              base.departamento b,
+                                              eva_mpal.producto ep
+                                            WHERE
+                                              b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+                                              ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+                                              AND ev.codigoagronetproducto_eva = "+parameters.producto+@"
+                                            ORDER BY ev.anho_eva;";
                             DataTable data3 = adapter.GetDataTable(sql3);
                             Parameter parameter3 = new Parameter { name = "anio", data = new List<ParameterData>() };
                             foreach (var p in (from p in data3.AsEnumerable()
@@ -568,33 +586,44 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                     break;
                 case "grafico":
 
-                    string sqlString = @"SELECT 	base.departamento.codigo,
-                                    base.departamento.nombre,
-                                    COALESCE(eva_mpal.productos.grupo, 0) as grupo,
-                                    eva_mpal.productos.codigoagronetcultivo,
-                                    eva_mpal.productos.nombredescriptorcultivo,
-                                    COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva,
-                                    COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0) as area_eva,
-                                    COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0) as produccion_eva,
-                                    COALESCE((eva_mpal.evadepartamentalanual.produccion_eva/eva_mpal.evadepartamentalanual.area_eva), 0) AS rendimiento,
-                                    COALESCE(eva_mpal.evadepartamentalanual.area_eva / ( SELECT SUM(e.area_eva) total_nacion_area FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo )*100, 0 )AS area_total_nacional,
-                                    COALESCE(eva_mpal.evadepartamentalanual.produccion_eva / ( SELECT SUM(e.produccion_eva) AS total_nacion_produccion FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo )*100, 0) AS produccion_total_nacional,
-                                    COALESCE((SELECT SUM(e.area_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / (SELECT SUM(e.area_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.grupo = eva_mpal.productos.grupo)*100 , 0) AS participacion_transi_area,
-                                    COALESCE((SELECT SUM(e.produccion_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / (SELECT SUM(e.produccion_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.grupo = eva_mpal.productos.grupo)*100, 0) AS participacion_transi_produccion,
-                                    ((SELECT COALESCE(SUM(e.area_eva),0) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo) / eva_mpal.evadepartamentalanual.area_eva) AS participacion_area_nacional,
-                                    ((SELECT COALESCE(SUM(e.produccion_eva),0) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / eva_mpal.evadepartamentalanual.produccion_eva) AS participacion_produccion_nacional
-                                    FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                    INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                    WHERE eva_mpal.evadepartamentalanual.anho_eva >= " + parameters.anio_inicial + " AND eva_mpal.evadepartamentalanual.anho_eva <= " + parameters.anio_final + " AND eva_mpal.productos.nombredescriptorcultivo = '" + parameters.producto + "' AND base.departamento.nombre IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ");";
-
-                    DataTable results = adapter.GetDataTable(sqlString);
                     switch (parameters.id)
                     {
                         case 1:
+                           
+                            string sqlString = @"SELECT
+  ev.anho_eva as anho_eva,
+  ev.codigoagronetproducto_eva as productocod,
+  ep.descripcion as producto,
+  ev.codigodepartamento_eva as departamentocod,
+  b.nombre as departamento,
+  ev.areacosechada_eva as area_eva,
+  ev.produccion_eva as produccion_eva,
+  ev.rendimiento_eva as rendimiento_eva
+FROM
+  eva_mpal.v_evadepartamental ev,
+  base.departamento b,
+  eva_mpal.producto ep
+WHERE
+  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+  /*PARAMETROS*/
+  AND ev.anho_eva >= " + parameters.anio_inicial + @" AND ev.anho_eva <= " + parameters.anio_final + @"
+  AND ev.codigoagronetproducto_eva = " + parameters.producto + @" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+GROUP BY
+    ev.anho_eva, ev.codigoagronetproducto_eva,
+    ep.descripcion,
+    ev.codigodepartamento_eva,
+    b.nombre,
+    ev.areacosechada_eva,
+    ev.produccion_eva,
+    ev.rendimiento_eva    
+ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
+
+                            DataTable results = adapter.GetDataTable(sqlString);
                             Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
 
                             var query1 = from r in results.AsEnumerable()
-                                         group r by r["nombre"];
+                                         group r by r["departamento"];
 
                             foreach (var deptosGroup in query1)
                             {
@@ -611,9 +640,43 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             returnData = (Chart)chart1;
                             break;
                         case 2:
+
+                            
+                            string sqlString2 = @"SELECT
+  ev.anho_eva,
+  ev.codigoagronetproducto_eva,
+  ep.descripcion,
+  ev.codigodepartamento_eva,
+  b.nombre,
+  ev.areacosechada_eva as area_total_depto,
+  ev.produccion_eva as prod_total_depto,
+  ev.rendimiento_eva
+FROM
+  eva_mpal.v_evadepartamental ev,
+  base.departamento b,
+  eva_mpal.producto ep
+WHERE
+  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+  /*PARAMETROS*/
+  AND ev.anho_eva >= " + parameters.anio_inicial + @" AND ev.anho_eva <= " + parameters.anio_final + @"
+  AND ev.codigoagronetproducto_eva = " + parameters.producto + @" AND (b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+GROUP BY
+    ev.anho_eva, ev.codigoagronetproducto_eva,
+    ep.descripcion,
+    ev.codigodepartamento_eva,
+    b.nombre,
+    ev.areacosechada_eva,
+    ev.produccion_eva,
+    ev.rendimiento_eva    
+ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
+
+                            DataTable results2 = adapter.GetDataTable(sqlString2);
+
+
                             Chart chart2 = new Chart { subtitle = "", series = new List<Series>() };
 
-                            var query2 = from r in results.AsEnumerable()
+                            var query2 = from r in results2.AsEnumerable()
                                          group r by r["nombre"];
 
                             foreach (var deptosGroup in query2)
@@ -631,9 +694,42 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             returnData = (Chart)chart2;
                             break;
                         case 3:
+
+                            string sqlString3 = @"SELECT
+  ev.anho_eva,
+  ev.codigoagronetproducto_eva,
+  ep.descripcion,
+  ev.codigodepartamento_eva,
+  b.nombre,
+  ev.areacosechada_eva as area_total_depto,
+  ev.produccion_eva as prod_total_depto,
+  ev.rendimiento_eva
+FROM
+  eva_mpal.v_evadepartamental ev,
+  base.departamento b,
+  eva_mpal.producto ep
+WHERE
+  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+  /*PARAMETROS*/
+  AND ev.anho_eva >= " + parameters.anio_inicial + @" AND ev.anho_eva <= " + parameters.anio_final + @"
+  AND ev.codigoagronetproducto_eva = " + parameters.producto + @" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+GROUP BY
+    ev.anho_eva, ev.codigoagronetproducto_eva,
+    ep.descripcion,
+    ev.codigodepartamento_eva,
+    b.nombre,
+    ev.areacosechada_eva,
+    ev.produccion_eva,
+    ev.rendimiento_eva    
+ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
+
+                            DataTable results3 = adapter.GetDataTable(sqlString3);
+
+
                             Chart chart3 = new Chart { subtitle = "", series = new List<Series>() };
 
-                            var query3 = from r in results.AsEnumerable()
+                            var query3 = from r in results3.AsEnumerable()
                                          group r by r["nombre"];
 
                             foreach (var deptosGroup in query3)
@@ -651,9 +747,90 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             returnData = (Chart)chart3;
                             break;
                         case 4:
+
+                            String sqlString4 = @"SELECT
+                              ev.anho_eva,
+                              ev.codigoagronetproducto_eva,
+                              ep.descripcion,
+                              ev.codigodepartamento_eva,
+                              b.nombre,
+                              (
+                                SELECT
+                                  SUM(a.produccion_eva)
+                                FROM
+                                  eva_mpal.v_evadepartamental a,
+                                  base.departamento b,
+                                  eva_mpal.producto c
+                                WHERE
+                                  b.codigo::VARCHAR = a.codigodepartamento_eva AND
+                                  c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	                             /*PARAMS*/
+   	                             AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	                             AND a.anho_eva = ev.anho_eva
+                                GROUP BY a.anho_eva
+                                ORDER BY a.anho_eva ASC
+                              ) as total_nacional_producto,
+                              ev.areacosechada_eva,
+                              ev.produccion_eva,
+                              /* area / total area nacional*/  
+                              (SUM(ev.areacosechada_eva)/(
+                                SELECT
+                                  SUM(a.areacosechada_eva)
+                                FROM
+                                  eva_mpal.v_evadepartamental a,
+                                  base.departamento b,
+                                  eva_mpal.producto c
+                                WHERE
+                                  b.codigo::VARCHAR = a.codigodepartamento_eva AND
+                                  c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	                             /*PARAMS*/
+   	                             AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	                             AND a.anho_eva = ev.anho_eva
+                                GROUP BY a.anho_eva
+                                ORDER BY a.anho_eva ASC
+                              )) as participacion_area_nacional,
+                              /* prod depto / total prod nacional*/
+                              (SUM(ev.produccion_eva)/(
+                                SELECT
+                                  SUM(a.produccion_eva)
+                                FROM
+                                  eva_mpal.v_evadepartamental a,
+                                  base.departamento b,
+                                  eva_mpal.producto c
+                                WHERE
+                                  b.codigo::VARCHAR = a.codigodepartamento_eva AND
+                                  c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	                             /*PARAMS*/
+   	                             AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	                             AND a.anho_eva = ev.anho_eva
+                                GROUP BY a.anho_eva
+                                ORDER BY a.anho_eva ASC
+                              )) as participacion_prod_nacional
+ 
+                            FROM
+                              eva_mpal.v_evadepartamental ev,
+                              base.departamento b,
+                              eva_mpal.producto ep
+                            WHERE
+                              b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+                              ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+                              /*PARAMETROS*/
+                              AND ev.anho_eva >= "+parameters.anio_inicial+@" AND ev.anho_eva <= "+@parameters.anio_final+@"
+                              AND ev.codigoagronetproducto_eva = "+parameters.producto+@" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
+                            GROUP BY
+                                ev.anho_eva, ev.codigoagronetproducto_eva,
+                                ep.descripcion,
+                                ev.codigodepartamento_eva,
+                                b.nombre,
+                                ev.areacosechada_eva,
+                                ev.produccion_eva,
+                                ev.rendimiento_eva    
+                            ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
+                            DataTable results4 = adapter.GetDataTable(sqlString4);
+
                             Chart chart4 = new Chart { subtitle = "", series = new List<Series>() };
 
-                            var query4 = from r in results.AsEnumerable()
+                            var query4 = from r in results4.AsEnumerable()
                                          group r by r["nombre"];
 
                             foreach (var deptosGroup in query4)
@@ -671,9 +848,91 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             returnData = (Chart)chart4;
                             break;
                         case 5:
+
+                              String sqlString5 = @"SELECT
+  ev.anho_eva,
+  ev.codigoagronetproducto_eva,
+  ep.descripcion,
+  ev.codigodepartamento_eva,
+  b.nombre,
+  (
+    SELECT
+      SUM(a.produccion_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  ) as total_nacional_producto,
+  ev.areacosechada_eva,
+  ev.produccion_eva,
+  /* area / total area nacional*/  
+  (SUM(ev.areacosechada_eva)/(
+    SELECT
+      SUM(a.areacosechada_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  )) as participacion_area_nacional,
+  /* prod depto / total prod nacional*/
+  (SUM(ev.produccion_eva)/(
+    SELECT
+      SUM(a.produccion_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  )) as participacion_prod_nacional
+ 
+FROM
+  eva_mpal.v_evadepartamental ev,
+  base.departamento b,
+  eva_mpal.producto ep
+WHERE
+  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+  /*PARAMETROS*/
+  AND ev.anho_eva >= "+parameters.anio_inicial+@" AND ev.anho_eva <= "+@parameters.anio_final+@"
+  AND ev.codigoagronetproducto_eva = "+parameters.producto+@" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
+GROUP BY
+    ev.anho_eva, ev.codigoagronetproducto_eva,
+    ep.descripcion,
+    ev.codigodepartamento_eva,
+    b.nombre,
+    ev.areacosechada_eva,
+    ev.produccion_eva,
+    ev.rendimiento_eva    
+ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
+                            DataTable results5 = adapter.GetDataTable(sqlString5);
+
+
                             Chart chart5 = new Chart { subtitle = "", series = new List<Series>() };
 
-                            var query5 = from r in results.AsEnumerable()
+                            var query5 = from r in results5.AsEnumerable()
                                          group r by r["nombre"];
 
                             foreach (var deptosGroup in query5)
@@ -691,9 +950,92 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                             returnData = (Chart)chart5;
                             break;
                         case 6:
+
+                            String sqlString6 = @"SELECT
+  ev.anho_eva,
+  ev.codigoagronetproducto_eva,
+  ep.descripcion,
+  ev.codigodepartamento_eva,
+  b.nombre,
+  (
+    SELECT
+      SUM(a.produccion_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  ) as total_nacional_producto,
+  ev.areacosechada_eva,
+  ev.produccion_eva,
+  /* area / total area nacional*/  
+  (SUM(ev.areacosechada_eva)/(
+    SELECT
+      SUM(a.areacosechada_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  )) as participacion_area_nacional,
+  /* prod depto / total prod nacional*/
+  (SUM(ev.produccion_eva)/(
+    SELECT
+      SUM(a.produccion_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  )) as participacion_prod_nacional
+ 
+FROM
+  eva_mpal.v_evadepartamental ev,
+  base.departamento b,
+  eva_mpal.producto ep
+WHERE
+  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+  /*PARAMETROS*/
+  AND ev.anho_eva >= " + parameters.anio_inicial + @" AND ev.anho_eva <= " + @parameters.anio_final + @"
+  AND ev.codigoagronetproducto_eva = " + parameters.producto + @" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
+GROUP BY
+    ev.anho_eva, ev.codigoagronetproducto_eva,
+    ep.descripcion,
+    ev.codigodepartamento_eva,
+    b.nombre,
+    ev.areacosechada_eva,
+    ev.produccion_eva,
+    ev.rendimiento_eva    
+ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
+                            DataTable results6 = adapter.GetDataTable(sqlString6);
+
+
+
                             Chart chart6 = new Chart { subtitle = "", series = new List<Series>() };
 
-                            var query6 = from r in results.AsEnumerable()
+                            var query6 = from r in results6.AsEnumerable()
                                          group r by r["nombre"];
 
                             foreach (var deptosGroup in query6)
@@ -714,7 +1056,87 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
                         case 7:
                             Chart chart7 = new Chart { subtitle = "", series = new List<Series>() };
 
-                            var query7 = from r in results.AsEnumerable()
+                              String sqlString7 = @"SELECT
+  ev.anho_eva,
+  ev.codigoagronetproducto_eva,
+  ep.descripcion,
+  ev.codigodepartamento_eva,
+  b.nombre,
+  (
+    SELECT
+      SUM(a.produccion_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  ) as total_nacional_producto,
+  ev.areacosechada_eva,
+  ev.produccion_eva,
+  /* area / total area nacional*/  
+  (SUM(ev.areacosechada_eva)/(
+    SELECT
+      SUM(a.areacosechada_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  )) as participacion_area_nacional,
+  /* prod depto / total prod nacional*/
+  (SUM(ev.produccion_eva)/(
+    SELECT
+      SUM(a.produccion_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  )) as participacion_prod_nacional
+ 
+FROM
+  eva_mpal.v_evadepartamental ev,
+  base.departamento b,
+  eva_mpal.producto ep
+WHERE
+  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+  /*PARAMETROS*/
+  AND ev.anho_eva >= "+parameters.anio_inicial+@" AND ev.anho_eva <= "+@parameters.anio_final+@"
+  AND ev.codigoagronetproducto_eva = "+parameters.producto+@" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
+GROUP BY
+    ev.anho_eva, ev.codigoagronetproducto_eva,
+    ep.descripcion,
+    ev.codigodepartamento_eva,
+    b.nombre,
+    ev.areacosechada_eva,
+    ev.produccion_eva,
+    ev.rendimiento_eva    
+ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
+                            DataTable results7 = adapter.GetDataTable(sqlString7);
+
+                            var query7 = from r in results7.AsEnumerable()
                                          group r by r["nombre"];
 
                             foreach (var deptosGroup in query7)
@@ -735,25 +1157,84 @@ ORDER BY eva_mpal.v_evadepartamental.anho_eva";
 
                     break;
                 case "tabla":
-                    string sqlStringTable = @"SELECT 	base.departamento.codigo,
-                                    base.departamento.nombre,
-                                    COALESCE(eva_mpal.productos.grupo, 0) as grupo,
-                                    eva_mpal.productos.codigoagronetcultivo,
-                                    eva_mpal.productos.nombredescriptorcultivo,
-                                    COALESCE(eva_mpal.evadepartamentalanual.anho_eva, 0) as anho_eva,
-                                    COALESCE(eva_mpal.evadepartamentalanual.area_eva, 0) as area_eva,
-                                    COALESCE(eva_mpal.evadepartamentalanual.produccion_eva, 0) as produccion_eva,
-                                    COALESCE((eva_mpal.evadepartamentalanual.produccion_eva/eva_mpal.evadepartamentalanual.area_eva), 0) AS rendimiento,
-                                    COALESCE(eva_mpal.evadepartamentalanual.area_eva / ( SELECT SUM(e.area_eva) total_nacion_area FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo )*100, 0 )AS area_total_nacional,
-                                    COALESCE(eva_mpal.evadepartamentalanual.produccion_eva / ( SELECT SUM(e.produccion_eva) AS total_nacion_produccion FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo )*100, 0) AS produccion_total_nacional,
-                                    COALESCE((SELECT SUM(e.area_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / (SELECT SUM(e.area_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.grupo = eva_mpal.productos.grupo)*100 , 0) AS participacion_transi_area,
-                                    COALESCE((SELECT SUM(e.produccion_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / (SELECT SUM(e.produccion_eva) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalsemestral e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.grupo = eva_mpal.productos.grupo)*100, 0) AS participacion_transi_produccion,
-                                    ((SELECT COALESCE(SUM(e.area_eva),0) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo) / eva_mpal.evadepartamentalanual.area_eva) AS participacion_area_nacional,
-                                    ((SELECT COALESCE(SUM(e.produccion_eva),0) FROM eva_mpal.productos p INNER JOIN eva_mpal.evadepartamentalanual e ON p.codigoagronetcultivo = e.codigoagronetproducto_eva WHERE e.anho_eva = eva_mpal.evadepartamentalanual.anho_eva AND p.nombredescriptorcultivo = eva_mpal.productos.nombredescriptorcultivo ) / eva_mpal.evadepartamentalanual.produccion_eva) AS participacion_produccion_nacional
-                                    FROM eva_mpal.productos INNER JOIN eva_mpal.evadepartamentalanual ON eva_mpal.productos.codigoagronetcultivo = eva_mpal.evadepartamentalanual.codigoagronetproducto_eva
-                                    INNER JOIN base.departamento ON base.departamento.codigo::VARCHAR = eva_mpal.evadepartamentalanual.codigodepartamento_eva
-                                    WHERE eva_mpal.evadepartamentalanual.anho_eva >= " + parameters.anio_inicial + " AND eva_mpal.evadepartamentalanual.anho_eva <= " + parameters.anio_final + " AND eva_mpal.productos.nombredescriptorcultivo = '" + parameters.producto + "' AND base.departamento.nombre IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ");";
-
+                    string sqlStringTable = @"SELECT
+  ev.anho_eva,
+  ev.codigoagronetproducto_eva,
+  ep.descripcion,
+  ev.codigodepartamento_eva,
+  b.nombre,
+  (
+    SELECT
+      SUM(a.produccion_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  ) as total_nacional_producto,
+  ev.areacosechada_eva,
+  ev.produccion_eva,
+  /* area / total area nacional*/  
+  (SUM(ev.areacosechada_eva)/(
+    SELECT
+      SUM(a.areacosechada_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  )) as participacion_area_nacional,
+  /* prod depto / total prod nacional*/
+  (SUM(ev.produccion_eva)/(
+    SELECT
+      SUM(a.produccion_eva)
+    FROM
+      eva_mpal.v_evadepartamental a,
+      base.departamento b,
+      eva_mpal.producto c
+    WHERE
+      b.codigo::VARCHAR = a.codigodepartamento_eva AND
+      c.codigoagronetcultivo = a.codigoagronetproducto_eva
+   	 /*PARAMS*/
+   	 AND c.codigoagronetcultivo = ev.codigoagronetproducto_eva
+   	 AND a.anho_eva = ev.anho_eva
+    GROUP BY a.anho_eva
+    ORDER BY a.anho_eva ASC
+  )) as participacion_prod_nacional
+ 
+FROM
+  eva_mpal.v_evadepartamental ev,
+  base.departamento b,
+  eva_mpal.producto ep
+WHERE
+  b.codigo::VARCHAR = ev.codigodepartamento_eva AND
+  ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+  /*PARAMETROS*/
+  AND ev.anho_eva >= " + parameters.anio_inicial + @" AND ev.anho_eva <= " + @parameters.anio_final + @"
+  AND ev.codigoagronetproducto_eva = " + parameters.producto + @" AND b.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"))
+GROUP BY
+    ev.anho_eva, ev.codigoagronetproducto_eva,
+    ep.descripcion,
+    ev.codigodepartamento_eva,
+    b.nombre,
+    ev.areacosechada_eva,
+    ev.produccion_eva,
+    ev.rendimiento_eva    
+ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
                     switch (parameters.id)
                     {
                         case 1:
