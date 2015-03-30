@@ -2317,39 +2317,233 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport420(report420 parameters)
         {
             Object returnData = null;
-            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            SQLAdapter adapter = new SQLAdapter();
+            
             switch (parameters.tipo)
             {
                 case "parametro":
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data1 = adapter.GetDatatable(@"SELECT codigo_ProductoVCR as codigo, producto_VCR as descripcion
+                                                                        FROM [AgronetComercio].dbo.VCR_Productos
+                                                                        ORDER BY producto_VCR");
+                            Parameter param1 = new Parameter { name = "productos", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
+                            DataTable data2 = adapter.GetDatatable(string.Format(@"select NombrePais_FAOPaises as descripcion, CodigoPais_FAOPaises as codigo from AgronetComercio.dbo.FAO_Paises order by 1", parameters.pais));
+                            Parameter param2 = new Parameter { name = "pais", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
                         case 3:
+                            Parameter param3 = new Parameter { name = "anio_inicial", data = new List<ParameterData>() };
+
+                            for (int anio = 1961; anio <= 2001; anio += 10)
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(anio), value = Convert.ToString(anio) };
+                                param3.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param3;
+                            break;
+                        case 4:
+                            Parameter param4 = new Parameter { name = "anio_final", data = new List<ParameterData>() };
+
+                            for (int anio = 1970; anio <= 2004; anio += 10)
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(anio), value = Convert.ToString(anio) };
+                                param4.data.Add(parameter);
+                            }
+                            param4.data.Add(new ParameterData { name = "2004", value = "2004" });
+
+                            returnData = (Parameter)param4;
                             break;
                     }
                     break;
-                case "grafico":
+                 case "grafico":
+                    DataTable results1 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_VCR (
+                                                                      codigoPais int,
+                                                                      codigoProducto int,
+                                                                      anho int,
+                                                                      Xia FLOAT,
+                                                                      Xwa float,
+                                                                      Xit float,
+                                                                      Xwt float,
+                                                                      Xwn float,
+                                                                      Xin float,
+                                                                      Xra float,
+                                                                      Xrt float,
+                                                                      Xm float,
+                                                                      VCEia float,
+                                                                      Mia float,
+                                                                      Mwa float,
+                                                                      Mit float,
+                                                                      Mwt float,
+                                                                      Mwn float,
+                                                                      Mina float,
+                                                                      Mra float,
+                                                                      Mrt float,
+                                                                      Mm float,
+                                                                      VClia float,
+                                                                      VCRia float
+                                                                     ) 
+                                                                     INSERT INTO #SP_VCR EXEC [AgronetComercio].[dbo].[VCR]
+		                                                                    --PARAMETROS DE FECHA
+		                                                                    @FECHA_INICIAL = {0},
+		                                                                    @FECHA_FINAL = {1},
+		                                                                    @PRODUCTO = {2}
+                                                                     SELECT
+                                                                    FAO_Producto.NombreProducto_FAOProducto,
+                                                                    FAO_Producto.NombreProductoIng_FAOProducto,
+                                                                    FAO_Paises.NombreAbrPais_FAOPaises,
+                                                                    FAO_Paises.NombrePais_FAOPaises,
+                                                                    #SP_VCR.anho,
+                                                                    #SP_VCR.codigoPais,
+                                                                    #SP_VCR.codigoProducto,
+                                                                    #SP_VCR.Xia,
+                                                                    #SP_VCR.Mia,
+                                                                    #SP_VCR.VCRia
+                                                                     FROM 
+                                                                     AgronetComercio.dbo.FAO_Producto FAO_Producto
+                                                                     INNER JOIN #SP_VCR ON #SP_VCR.codigoProducto =  FAO_Producto.CodigoProducto_FAOProducto
+                                                                     INNER JOIN  AgronetComercio.dbo.FAO_Paises FAO_Paises ON FAO_Paises.CodigoPais_FAOPaises = #SP_VCR.codigoPais
+                                                                    AND #SP_VCR.anho = #SP_VCR.anho
+                                                                    WHERE FAO_Producto.CodigoProducto_FAOProducto = {3}
+                                                                    AND  FAO_Paises.CodigoPais_FAOPaises IN (" + string.Join(",", parameters.pais.Select(d => d)) + @")
+                                                                    ORDER BY FAO_Paises.NombrePais_FAOPaises, #SP_VCR.anho
+                                                                    DROP TABLE #SP_VCR", parameters.anio_inicial, parameters.anio_final, parameters.producto, parameters.producto));
+
                     switch (parameters.id)
                     {
                         case 1:
+                            Chart chart1 = new Chart { subtitle = "VCR", series = new List<Series>() };
+    
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                group d by d["NombrePais_FAOPaises"] into paisG
+                                                select paisG))
+                            {
+                                var serie = new Series { name = d1.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in d1)
+                                {
+                                    var data = new Data { name = Convert.ToString(seriesData["anho"]), y = Convert.ToDouble(seriesData["VCRia"]) };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+                        
+                            returnData = (Chart)chart1;
                             break;
                         case 2:
+                            Chart chart2 = new Chart { subtitle = "Exportaciones (Miles US$)", series = new List<Series>() };
+    
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                group d by d["NombrePais_FAOPaises"] into paisG
+                                                select paisG))
+                            {
+                                var serie = new Series { name = d1.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in d1)
+                                {
+                                    var data = new Data { name = Convert.ToString(seriesData["anho"]), y = Convert.ToDouble(seriesData["Xia"]) };
+                                    serie.data.Add(data);
+                                }
+                                chart2.series.Add(serie);
+                            }
+                        
+                            returnData = (Chart)chart2;
                             break;
                         case 3:
+                            Chart chart3 = new Chart { subtitle = "Importaciones (Miles US$)", series = new List<Series>() };
+    
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                group d by d["NombrePais_FAOPaises"] into paisG
+                                                select paisG))
+                            {
+                                var serie = new Series { name = d1.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in d1)
+                                {
+                                    var data = new Data { name = Convert.ToString(seriesData["anho"]), y = Convert.ToDouble(seriesData["Mia"]) };
+                                    serie.data.Add(data);
+                                }
+                                chart3.series.Add(serie);
+                            }
+                        
+                            returnData = (Chart)chart3;
                             break;
                     }
                     break;
                 case "tabla":
+                    DataTable results2 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_VCR (
+                                                                      codigoPais int,
+                                                                      codigoProducto int,
+                                                                      anho int,
+                                                                      Xia FLOAT,
+                                                                      Xwa float,
+                                                                      Xit float,
+                                                                      Xwt float,
+                                                                      Xwn float,
+                                                                      Xin float,
+                                                                      Xra float,
+                                                                      Xrt float,
+                                                                      Xm float,
+                                                                      VCEia float,
+                                                                      Mia float,
+                                                                      Mwa float,
+                                                                      Mit float,
+                                                                      Mwt float,
+                                                                      Mwn float,
+                                                                      Mina float,
+                                                                      Mra float,
+                                                                      Mrt float,
+                                                                      Mm float,
+                                                                      VClia float,
+                                                                      VCRia float
+                                                                     ) 
+                                                                     INSERT INTO #SP_VCR EXEC [AgronetComercio].[dbo].[VCR]
+		                                                                    --PARAMETROS DE FECHA
+		                                                                    @FECHA_INICIAL = {0},
+		                                                                    @FECHA_FINAL = {1},
+		                                                                    @PRODUCTO = {2}
+                                                                     SELECT
+                                                                    FAO_Producto.NombreProducto_FAOProducto,
+                                                                    FAO_Producto.NombreProductoIng_FAOProducto,
+                                                                    FAO_Paises.NombreAbrPais_FAOPaises,
+                                                                    FAO_Paises.NombrePais_FAOPaises,
+                                                                    #SP_VCR.anho,
+                                                                    #SP_VCR.codigoPais,
+                                                                    #SP_VCR.codigoProducto,
+                                                                    #SP_VCR.Xia,
+                                                                    #SP_VCR.Mia,
+                                                                    #SP_VCR.VCRia
+                                                                     FROM 
+                                                                     AgronetComercio.dbo.FAO_Producto FAO_Producto
+                                                                     INNER JOIN #SP_VCR ON #SP_VCR.codigoProducto =  FAO_Producto.CodigoProducto_FAOProducto
+                                                                     INNER JOIN  AgronetComercio.dbo.FAO_Paises FAO_Paises ON FAO_Paises.CodigoPais_FAOPaises = #SP_VCR.codigoPais
+                                                                    AND #SP_VCR.anho = #SP_VCR.anho
+                                                                    WHERE FAO_Producto.CodigoProducto_FAOProducto = {3}
+                                                                    AND  FAO_Paises.CodigoPais_FAOPaises IN (" + string.Join(",", parameters.pais.Select(d => d)) + @")
+                                                                    ORDER BY FAO_Paises.NombrePais_FAOPaises, #SP_VCR.anho
+                                                                    DROP TABLE #SP_VCR", parameters.anio_inicial, parameters.anio_final, parameters.producto, parameters.producto));
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            Table table = new Table { rows = results2 };
+                            returnData = (Table)table;                           
                             break;
                     }
                     break;
@@ -2367,39 +2561,239 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport421(report421 parameters)
         {
             Object returnData = null;
-            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            SQLAdapter adapter = new SQLAdapter();
+
             switch (parameters.tipo)
             {
                 case "parametro":
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data1 = adapter.GetDatatable(@"SELECT CodigoPais_FAOPaises as codigo, NombrePais_FAOPaises as descripcion FROM [AgronetComercio].dbo.FAO_Paises order by NombrePais_FAOPaises;");
+                            Parameter param1 = new Parameter { name = "pais", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
+                            DataTable data2 = adapter.GetDatatable(string.Format(@"select  pro.CodigoProducto_FAOProducto as codigo, pro.NombreProducto_FAOProducto as descripcion
+                                                                                    from    [AgronetComercio].dbo.VistaFAOImpoVolumen impovol, [AgronetComercio].dbo.FAO_Producto pro
+                                                                                    where   pro.CodigoProducto_FAOProducto = impovol.CodigoProducto_FAO
+                                                                                    and     impovol.CodigoPais_FAO = {0}
+                                                                                    group by pro.CodigoProducto_FAOProducto,pro.NombreProducto_FAOProducto
+                                                                                    order by 2", parameters.pais));
+                            Parameter param2 = new Parameter { name = "producto", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
                         case 3:
+                            Parameter param3 = new Parameter { name = "anio_inicial", data = new List<ParameterData>() };
+
+                            for (int anio = 1961; anio <= 2001; anio += 10)
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(anio), value = Convert.ToString(anio) };
+                                param3.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param3;
+                            break;
+                        case 4:
+                            Parameter param4 = new Parameter { name = "anio_final", data = new List<ParameterData>() };
+
+                            for (int anio = 1970; anio <= 2004; anio += 10)
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(anio), value = Convert.ToString(anio) };
+                                param4.data.Add(parameter);
+                            }
+                            param4.data.Add(new ParameterData { name = "2004", value = "2004" });
+
+                            returnData = (Parameter)param4;
                             break;
                     }
                     break;
                 case "grafico":
+                    DataTable results1 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_VCR_PRODUCTO (
+                                                                                codigoPais int,
+                                                                                codigoProducto int,
+                                                                                anho int,
+                                                                                Xia FLOAT,
+                                                                                Xwa float,
+                                                                                Xit float,
+                                                                                Xwt float,
+                                                                                Xwn float,
+                                                                                Xin float,
+                                                                                Xra float,
+                                                                                Xrt float,
+                                                                                Xm float,
+                                                                                VCEia float,
+                                                                                Mia float,
+                                                                                Mwa float,
+                                                                                Mit float,
+                                                                                Mwt float,
+                                                                                Mwn float,
+                                                                                Mina float,
+                                                                                Mra float,
+                                                                                Mrt float,
+                                                                                Mm float,
+                                                                                VClia float,
+                                                                                VCRia float
+                                                                                ) 
+                                                                                INSERT INTO #SP_VCR_PRODUCTO EXEC [AgronetComercio].[dbo].[VCR_PRODUCTO]
+		                                                                            --PARAMETROS DE FECHA
+		                                                                            @FECHA_INICIAL = {0},
+		                                                                            @FECHA_FINAL = {1},
+		                                                                            @PAIS = {2}
+                                                                                SELECT
+                                                                            FAO_Producto.NombreProducto_FAOProducto,
+                                                                            FAO_Paises.NombreAbrPais_FAOPaises,
+                                                                            #SP_VCR_PRODUCTO.anho,
+                                                                            #SP_VCR_PRODUCTO.codigoPais,
+                                                                            #SP_VCR_PRODUCTO.codigoProducto,
+                                                                            #SP_VCR_PRODUCTO.VCRia,
+                                                                            #SP_VCR_PRODUCTO.Xia,
+                                                                            #SP_VCR_PRODUCTO.Mia
+
+                                                                                FROM 
+                                                                                AgronetComercio.dbo.FAO_Producto FAO_Producto
+                                                                                INNER JOIN #SP_VCR_PRODUCTO ON #SP_VCR_PRODUCTO.codigoProducto =  FAO_Producto.CodigoProducto_FAOProducto
+                                                                                INNER JOIN  AgronetComercio.dbo.FAO_Paises FAO_Paises ON FAO_Paises.CodigoPais_FAOPaises = #SP_VCR_PRODUCTO.codigoPais
+                                                                            AND #SP_VCR_PRODUCTO.anho = #SP_VCR_PRODUCTO.anho
+                                                                            WHERE
+                                                                            --PARAMETROS
+                                                                            FAO_Producto.CodigoProducto_FAOProducto IN (" + string.Join(",", parameters.producto.Select(d => d)) + @")
+                                                                            AND  FAO_Paises.CodigoPais_FAOPaises = {3}
+                                                                            ORDER BY FAO_Producto.NombreProducto_FAOProducto, #SP_VCR_PRODUCTO.anho
+
+                                                                            DROP TABLE #SP_VCR_PRODUCTO", parameters.anio_inicial, parameters.anio_final, parameters.pais, parameters.pais));
                     switch (parameters.id)
                     {
                         case 1:
+                            Chart chart1 = new Chart { subtitle = "VCR", series = new List<Series>() };
+    
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                group d by d["NombreProducto_FAOProducto"] into productosG
+                                                select productosG))
+                            {
+                                var serie = new Series { name = d1.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in d1)
+                                {
+                                    var data = new Data { name = Convert.ToString(seriesData["anho"]), y = Convert.ToDouble(seriesData["VCRia"]) };
+                                    serie.data.Add(data);
+                                }
+                                chart1.series.Add(serie);
+                            }
+                        
+                            returnData = (Chart)chart1;
                             break;
                         case 2:
+                            Chart chart2 = new Chart { subtitle = "Exportaciones (Miles US$)", series = new List<Series>() };
+    
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                group d by d["NombreProducto_FAOProducto"] into productosG
+                                                select productosG))
+                            {
+                                var serie = new Series { name = d1.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in d1)
+                                {
+                                    var data = new Data { name = Convert.ToString(seriesData["anho"]), y = Convert.ToDouble(seriesData["Xia"]) };
+                                    serie.data.Add(data);
+                                }
+                                chart2.series.Add(serie);
+                            }
+                        
+                            returnData = (Chart)chart2;
                             break;
                         case 3:
+                            Chart chart3 = new Chart { subtitle = "Importaciones (Miles US$)", series = new List<Series>() };
+    
+                            foreach (var d1 in (from d in results1.AsEnumerable()
+                                                group d by d["NombreProducto_FAOProducto"] into productosG
+                                                select productosG))
+                            {
+                                var serie = new Series { name = d1.Key.ToString(), data = new List<Data>() };
+
+                                foreach (var seriesData in d1)
+                                {
+                                    var data = new Data { name = Convert.ToString(seriesData["anho"]), y = Convert.ToDouble(seriesData["Mia"]) };
+                                    serie.data.Add(data);
+                                }
+                                chart3.series.Add(serie);
+                            }
+                        
+                            returnData = (Chart)chart3;
                             break;
                     }
                     break;
                 case "tabla":
+                    DataTable results2 = adapter.GetDatatable(String.Format(@"CREATE TABLE #SP_VCR_PRODUCTO (
+                                                                                codigoPais int,
+                                                                                codigoProducto int,
+                                                                                anho int,
+                                                                                Xia FLOAT,
+                                                                                Xwa float,
+                                                                                Xit float,
+                                                                                Xwt float,
+                                                                                Xwn float,
+                                                                                Xin float,
+                                                                                Xra float,
+                                                                                Xrt float,
+                                                                                Xm float,
+                                                                                VCEia float,
+                                                                                Mia float,
+                                                                                Mwa float,
+                                                                                Mit float,
+                                                                                Mwt float,
+                                                                                Mwn float,
+                                                                                Mina float,
+                                                                                Mra float,
+                                                                                Mrt float,
+                                                                                Mm float,
+                                                                                VClia float,
+                                                                                VCRia float
+                                                                                ) 
+                                                                                INSERT INTO #SP_VCR_PRODUCTO EXEC [AgronetComercio].[dbo].[VCR_PRODUCTO]
+		                                                                            --PARAMETROS DE FECHA
+		                                                                            @FECHA_INICIAL = {0},
+		                                                                            @FECHA_FINAL = {1},
+		                                                                            @PAIS = {2}
+                                                                                SELECT
+                                                                            FAO_Producto.NombreProducto_FAOProducto,
+                                                                            FAO_Paises.NombreAbrPais_FAOPaises,
+                                                                            #SP_VCR_PRODUCTO.anho,
+                                                                            #SP_VCR_PRODUCTO.codigoPais,
+                                                                            #SP_VCR_PRODUCTO.codigoProducto,
+                                                                            #SP_VCR_PRODUCTO.VCRia,
+                                                                            #SP_VCR_PRODUCTO.Xia,
+                                                                            #SP_VCR_PRODUCTO.Mia
+
+                                                                                FROM 
+                                                                                AgronetComercio.dbo.FAO_Producto FAO_Producto
+                                                                                INNER JOIN #SP_VCR_PRODUCTO ON #SP_VCR_PRODUCTO.codigoProducto =  FAO_Producto.CodigoProducto_FAOProducto
+                                                                                INNER JOIN  AgronetComercio.dbo.FAO_Paises FAO_Paises ON FAO_Paises.CodigoPais_FAOPaises = #SP_VCR_PRODUCTO.codigoPais
+                                                                            AND #SP_VCR_PRODUCTO.anho = #SP_VCR_PRODUCTO.anho
+                                                                            WHERE
+                                                                            --PARAMETROS
+                                                                            FAO_Producto.CodigoProducto_FAOProducto IN (" + string.Join(",", parameters.producto.Select(d => d)) + @")
+                                                                            AND  FAO_Paises.CodigoPais_FAOPaises = {3}
+                                                                            ORDER BY FAO_Producto.NombreProducto_FAOProducto, #SP_VCR_PRODUCTO.anho
+
+                                                                            DROP TABLE #SP_VCR_PRODUCTO", parameters.anio_inicial, parameters.anio_final, parameters.pais, parameters.pais));
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            Table table = new Table { rows = results2 };
+                            returnData = (Table)table;                           
                             break;
                     }
                     break;
@@ -2417,28 +2811,53 @@ namespace AgronetEstadisticas.Controllers
         public IHttpActionResult postReport422(report422 parameters)
         {
             Object returnData = null;
-            SQLAnalysisAdaper adapter = new SQLAnalysisAdaper();
+            SQLAdapter adapter = new SQLAdapter();
             switch (parameters.tipo)
             {
                 case "parametro":
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable data1 = adapter.GetDatatable(@"SELECT pai.CodigoPais_FAOPaises as codigo, pai.NombrePais_FAOPaises as descripcion
+                                                                        FROM  [AgronetComercio].dbo.VistaFAOExpoVolumen impovol, [AgronetComercio].dbo.FAO_Paises pai
+                                                                        WHERE impovol.CodigoPais_FAO = pai.CodigoPais_FAOPaises
+                                                                        GROUP BY pai.CodigoPais_FAOPaises, pai.NombrePais_FAOPaises
+                                                                        ORDER BY NombrePais_FAOPaises;");
+                            Parameter param1 = new Parameter { name = "pais", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data1.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param1.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
+                            DataTable data2 = adapter.GetDatatable(String.Format(@"SELECT pro.CodigoProducto_FAOProducto as codigo, pro.NombreProducto_FAOProducto as descripcion
+                                                                                    FROM [AgronetComercio].dbo.VistaFAOExpoVolumen impovol INNER JOIN [AgronetComercio].dbo.FAO_Producto pro ON impovol.CodigoProducto_FAO = pro.CodigoProducto_FAOProducto
+                                                                                    WHERE (impovol.CodigoPais_FAO = {0})
+                                                                                    GROUP BY pro.CodigoProducto_FAOProducto, pro.NombreProducto_FAOProducto, impovol.CodigoUnidad_FAOUnidades
+                                                                                    HAVING (impovol.CodigoUnidad_FAOUnidades = 4)
+                                                                                    ORDER BY pro.NombreProducto_FAOProducto", parameters.pais));
+                            Parameter param2 = new Parameter { name = "producto", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data2.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["codigo"]) };
+                                param2.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param2;
                             break;
                         case 3:
-                            break;
-                    }
-                    break;
-                case "grafico":
-                    switch (parameters.id)
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable data3 = adapter.GetDatatable(@"SELECT DISTINCT Anho as anio FROM [AgronetComercio].dbo.FAO ORDER BY Anho");
+                            Parameter param3 = new Parameter { name = "anio", data = new List<ParameterData>() };
+                            foreach (var d in (from p in data3.AsEnumerable() select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anio"]), value = Convert.ToString(d["anio"]) };
+                                param3.data.Add(parameter);
+                            }
+
+                            returnData = (Parameter)param3;
                             break;
                     }
                     break;
@@ -2446,10 +2865,47 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results1 = adapter.GetDatatable(String.Format(@" CREATE TABLE #SP_MUNDO_INSERCION (
+                                                                                        Anho int,
+                                                                                        NombrePais_FAOPaises text,
+                                                                                        NombreProducto_FAOProducto text,
+                                                                                        Valor int,
+                                                                                        CodigoProducto_FAOProducto int
+                                                                                        ) 
+                                                                                        INSERT INTO #SP_MUNDO_INSERCION EXEC [AgronetComercio].[dbo].[SP_MUNDO_INSERCION]
+		                                                                                    --PARAMETROS DE FECHA
+		                                                                                    @FECHA_INICIAL = N'{0}-01-01',
+		                                                                                    @FECHA_FINAL = N'{1}-12-31' 
+                                                                                        SELECT
+                                                                                        VistaFAOExpoVolumen.Anho, 
+                                                                                        FAO_Producto.NombreProducto_FAOProducto, 
+                                                                                        FAO_Paises.NombrePais_FAOPaises, 
+                                                                                        FAO_Paises.CodigoPais_FAOPaises, 
+                                                                                        FAO_Producto.CodigoProducto_FAOProducto, 
+                                                                                        VistaFAOExpoVolumen.CodigoProducto_FAO,
+                                                                                        VistaFAOExpoVolumen.Valor, 
+                                                                                        #SP_MUNDO_INSERCION.Valor
+                                                                                        FROM   
+                                                                                        AgronetComercio.dbo.FAO_Paises FAO_Paises 
+                                                                                        RIGHT OUTER JOIN (
+	                                                                                    AgronetComercio.dbo.FAO_Producto FAO_Producto 
+	                                                                                    RIGHT OUTER JOIN AgronetComercio.dbo.VistaFAOExpoVolumen VistaFAOExpoVolumen 
+	                                                                                    ON FAO_Producto.CodigoProducto_FAOProducto=VistaFAOExpoVolumen.CodigoProducto_FAO
+                                                                                    ) 
+                                                                                    ON FAO_Paises.CodigoPais_FAOPaises=VistaFAOExpoVolumen.CodigoPais_FAO
+                                                                                    INNER JOIN #SP_MUNDO_INSERCION ON #SP_MUNDO_INSERCION.CodigoProducto_FAOProducto =  FAO_Producto.CodigoProducto_FAOProducto
+                                                                                    AND #SP_MUNDO_INSERCION.Anho = VistaFAOExpoVolumen.Anho
+                                                                                    WHERE VistaFAOExpoVolumen.Valor <> 0
+                                                                                    AND FAO_Producto.CodigoProducto_FAOProducto = {2}
+                                                                                    AND  FAO_Paises.CodigoPais_FAOPaises = {3}
+                                                                                    ORDER BY VistaFAOExpoVolumen.Anho,FAO_Producto.NombreProducto_FAOProducto
+
+                                                                                    DROP TABLE #SP_MUNDO_INSERCION", parameters.anio_inicial,
+                                                                                                                   parameters.anio_final,
+                                                                                                                   parameters.producto,
+                                                                                                                   parameters.pais));
+                            Table table = new Table { rows = results1 };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
@@ -2462,6 +2918,5 @@ namespace AgronetEstadisticas.Controllers
 
             return Ok(returnData);
         }
-
     }
 }
