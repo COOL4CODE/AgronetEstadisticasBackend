@@ -792,7 +792,7 @@ ORDER BY ev.anho_eva, ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rend
                     {
                         case 1:
 
-                            string sqlString = @"SELECT
+                            string sqlString1 = @"SELECT
   ev.anho_eva as anho_eva,
   ev.codigoagronetproducto_eva as productocod,
   ep.descripcion as producto,
@@ -821,10 +821,10 @@ GROUP BY
     ev.rendimiento_eva    
 ORDER BY ev.produccion_eva desc, ev.areacosechada_eva desc, ev.rendimiento_eva desc";
 
-                            DataTable results = adapter.GetDataTable(sqlString);
+                            DataTable results1 = adapter.GetDataTable(sqlString1);
                             Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
 
-                            var query1 = from r in results.AsEnumerable()
+                            var query1 = from r in results1.AsEnumerable()
                                          group r by r["departamento"];
 
                             foreach (var deptosGroup in query1)
