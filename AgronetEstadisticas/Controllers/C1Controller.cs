@@ -879,28 +879,6 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
             Object returnData = null;
             PostgresqlAdapter adapter = new PostgresqlAdapter();
 
-            string sqlString = @" SELECT 
-                                  v_evadepartamental.anho_eva, 
-                                  v_evadepartamental.codigoagronetproducto_eva, 
-                                  producto.descripcion as producto, 
-                                  v_evadepartamental.codigodepartamento_eva, 
-                                  departamento.nombre as departamento, 
-                                  v_evadepartamental.areacosechada_eva as area_eva, 
-                                  v_evadepartamental.produccion_eva as produccion_eva, 
-                                  v_evadepartamental.rendimiento_eva as rendimiento_eva
-  
-                                FROM 
-                                  agromapas.eva_mpal.v_evadepartamental, 
-                                  agromapas.base.departamento, 
-                                  agromapas.eva_mpal.producto
-                                WHERE 
-                                  departamento.codigo::VARCHAR = v_evadepartamental.codigodepartamento_eva AND
-                                  producto.codigoagronetcultivo = v_evadepartamental.codigoagronetproducto_eva
-                                  /*PARAMETROS*/
-                                  AND v_evadepartamental.anho_eva >= " + parameters.anio_inicial + @" 
-                                  AND v_evadepartamental.anho_eva <= " + parameters.anio_final + @" 
-                                  AND departamento.codigo = " + parameters.departamento + @"
-                                ORDER BY v_evadepartamental.produccion_eva, v_evadepartamental.areacosechada_eva, v_evadepartamental.rendimiento_eva ";
             switch (parameters.tipo)
             {
                 case "parametro":
@@ -960,7 +938,23 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                     break;
                 case "grafico":
 
-                    DataTable results = adapter.GetDataTable(sqlString);
+                    DataTable results = adapter.GetDataTable(String.Format(@"SELECT
+                                                                agromapas.base.v_departamento.nombre as departamento,
+                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                SUM(eva_anual.areacosechada_eva) as area_eva,
+                                                                SUM(eva_anual.produccion_eva) as produccion_eva,
+                                                                SUM(eva_anual.rendimiento_eva) as rendimiento
+                                                                FROM agromapas.eva_mpal.v_evadepartamental eva_anual
+                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
+                                                                WHERE eva_anual.anho_eva >= {0}
+                                                                AND eva_anual.anho_eva <= {1}
+                                                                AND eva_anual.codigodepartamento_eva = '{2}'
+                                                                GROUP BY
+                                                                eva_anual.codigoagronetproducto_eva,
+                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.base.v_departamento.nombre
+                                                                ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.anio_inicial, parameters.anio_final, parameters.departamento));
                     switch (parameters.id)
                     {
                         case 1:
@@ -975,11 +969,11 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
 
                             foreach (var deptoGroup in query1)
                             {
-                                var serie1 = new Series { name = deptoGroup.Key.ToString(), data = new List<Data>() };
+                                var serie1 = new Series { name = deptoGroup.Key.ToString().Trim(), data = new List<Data>() };
                                 foreach (var productGroup in deptoGroup)
                                 {
                                     double y = productGroup.Sum(d => Convert.ToDouble(d["area_eva"]));
-                                    var data = new Data { name = Convert.ToString(productGroup.Key.ToString()), y = y };
+                                    var data = new Data { name = Convert.ToString(productGroup.Key.ToString().Trim()), y = y };
                                     serie1.data.Add(data);
                                 }
                                 chart1.series.Add(serie1);
@@ -999,11 +993,11 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
 
                             foreach (var deptoGroup in query2)
                             {
-                                var serie1 = new Series { name = deptoGroup.Key.ToString(), data = new List<Data>() };
+                                var serie1 = new Series { name = deptoGroup.Key.ToString().Trim(), data = new List<Data>() };
                                 foreach (var productGroup in deptoGroup)
                                 {
                                     double y = productGroup.Sum(d => Convert.ToDouble(d["produccion_eva"]));
-                                    var data = new Data { name = Convert.ToString(productGroup.Key.ToString()), y = y };
+                                    var data = new Data { name = Convert.ToString(productGroup.Key.ToString().Trim()), y = y };
                                     serie1.data.Add(data);
                                 }
                                 chart2.series.Add(serie1);
@@ -1019,7 +1013,28 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                     switch (parameters.id)
                     {
                         case 1:
-                            Table table = new Table { rows = adapter.GetDataTable(sqlString) };
+                            Table table = new Table
+                            {
+                                rows = adapter.GetDataTable(String.Format(@"SELECT
+                                                                agromapas.base.v_departamento.nombre as departamento,
+                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                eva_anual.anho_eva,
+                                                                SUM(eva_anual.areacosechada_eva) as area_eva,
+                                                                SUM(eva_anual.produccion_eva) as produccion_eva,
+                                                                SUM(eva_anual.rendimiento_eva) as rendimiento
+                                                                FROM agromapas.eva_mpal.v_evadepartamental eva_anual
+                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
+                                                                WHERE eva_anual.anho_eva >= {0}
+                                                                AND eva_anual.anho_eva <= {1}
+                                                                AND eva_anual.codigodepartamento_eva = '{2}'
+                                                                GROUP BY
+                                                                eva_anual.codigoagronetproducto_eva,
+                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.base.v_departamento.nombre,
+                                                                eva_anual.anho_eva
+                                                                ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun, eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.departamento))
+                            };
                             returnData = (Table)table;
                             break;
                     }
@@ -1301,7 +1316,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                     pi.codigodepto as departamentocod, 
                                     b.nombre as departamento, 
                                     pi.codigoedadtipobovino as codigoedadbovino, 
-                                    po.descripcion as , 
+                                    po.descripcion, 
                                     SUM(pi.totalmachos) AS total_machos_depto,  
                                     SUM(pi.totalhembras) AS total_hembras_depto
                                 FROM 
@@ -1313,7 +1328,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                     po.codigo = pi.codigoedadtipobovino
                                     /*PARAMETROS*/
                                     AND pi.anho >= " + parameters.anio_inicial + @" AND pi.anho <= " + parameters.anio_final + @"
-                                    AND pi.codigodepto in " + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @"
+                                    AND pi.codigodepto in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
                                 GROUP BY pi.anho, pi.codigodepto, b.nombre, pi.codigoedadtipobovino, 
                                     po.descripcion
                                 ORDER BY pi.anho, pi.codigoedadtipobovino";
@@ -1341,27 +1356,6 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
         public IHttpActionResult postReport107(report107 parameters)
         {
             Object returnData = null;
-
-            string sqlString = @"SELECT 
-                              pp.producto,  
-                              p.nombre, 
-                              pp.periodo as periodo, 
-                              pp.departamento as departamentocod, 
-                              b.nombre as departamento_nombre,
-                              pp.produccion as produccion_pecuaria, 
-                              pp.unidad 
-
-                            FROM 
-                              pecuario.produccionpecuaria pp, 
-                              pecuario.producto p, 
-                              agromapas.base.departamento b
-                            WHERE 
-                              p.codigo = pp.producto AND
-                              b.codigo = pp.departamento
-                              /*PARAMETROS*/    
-                              AND pp.producto = " + parameters.tipo_pecuario + @" AND pp.periodo >= " + parameters.anio_inicial + @" 
-                              AND pp.periodo <= " + parameters.anio_final + @"
-                              AND pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ") ";
 
             PostgresqlAdapter adapter = new PostgresqlAdapter();
             switch (parameters.tipo)
@@ -1449,6 +1443,26 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
 
                     break;
                 case "grafico":
+                    string sqlString = @"SELECT 
+                              pp.producto,  
+                              p.nombre, 
+                              pp.periodo as periodo, 
+                              pp.departamento as departamentocod, 
+                              b.nombre as departamento_nombre,
+                              pp.produccion as produccion_pecuaria, 
+                              pp.unidad 
+
+                            FROM 
+                              pecuario.produccionpecuaria pp, 
+                              pecuario.producto p, 
+                              agromapas.base.departamento b
+                            WHERE 
+                              p.codigo = pp.producto AND
+                              b.codigo = pp.departamento
+                              /*PARAMETROS*/    
+                              AND pp.producto = " + parameters.tipo_pecuario + @" AND pp.periodo >= " + parameters.anio_inicial + @" 
+                              AND pp.periodo <= " + parameters.anio_final + @"
+                              AND pp.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + ") ";
 
                     switch (parameters.id)
                     {
