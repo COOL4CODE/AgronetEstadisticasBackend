@@ -1532,5 +1532,189 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
 
             return Ok(returnData);
         }
+    
+        [Route("api/Report/108")]
+        public IHttpActionResult postReport108(report108 parameters)
+        {
+            Object returnData = null;
+            PostgresqlAdapter adapter = new PostgresqlAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            parameter.name = "departamento";
+                            foreach (var p in (from p in adapter.GetDataTable(@"SELECT DISTINCT
+                                                                                agromapas.base.v_departamento.codigodane departamentocod, 
+                                                                                agromapas.base.v_departamento.nombre departamento
+                                                                                FROM agromapas.base.v_departamento
+                                                                                INNER JOIN (SELECT DISTINCT substring(v_mun.codigodane from 1 for 2) codigodane
+                                                                                FROM agromapas.eva_mpal.v_evamunicipal v_evamun
+                                                                                INNER JOIN agromapas.base.v_municipio v_mun ON v_mun.codigo::VARCHAR = v_evamun.codigomunicipio_eva) eva_mun ON eva_mun.codigodane = agromapas.base.v_departamento.codigodane
+                                                                                ORDER BY agromapas.base.v_departamento.nombre ASC;").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData param = new ParameterData { value = Convert.ToString(p["departamentocod"]), name = Convert.ToString(p["departamento"]).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                        case 2:
+                            parameter.name = "municipio";
+                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT DISTINCT
+                                                                                v_mun.codigo municipiocod, 
+                                                                                v_mun.nombre municipio
+                                                                                FROM agromapas.eva_mpal.v_evamunicipal v_evamun
+                                                                                INNER JOIN agromapas.base.v_municipio v_mun ON v_mun.codigo::VARCHAR = v_evamun.codigomunicipio_eva
+                                                                                WHERE substring(v_mun.codigo::VARCHAR from 1 for 2) = '{0}'
+                                                                                ORDER BY v_mun.nombre;", parameters.departamento)).AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData param = new ParameterData { value = Convert.ToString(p["municipiocod"]), name = Convert.ToString(p["municipio"]).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                        case 3:
+                            parameter.name = "anio";
+                            foreach (var p in (from p in adapter.GetDataTable(@"SELECT DISTINCT v_evamun.anho_eva as anio
+                                                                                FROM agromapas.eva_mpal.v_evamunicipal v_evamun
+                                                                                ORDER BY v_evamun.anho_eva;").AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    DataTable results = adapter.GetDataTable(String.Format(@"SELECT
+                                                                            v_evamun.anho_eva as anio,
+                                                                            v_prod.nombrecomun as producto,
+                                                                            SUM(v_evamun.areasembrada_eva) as area_sembrada,
+                                                                            SUM(v_evamun.areacosechada_eva) as area_cosechada,
+                                                                            SUM(v_evamun.produccion_eva) as produccion,
+                                                                            SUM(v_evamun.rendimiento_eva) as rendimiento
+                                                                            FROM agromapas.eva_mpal.v_evamunicipal v_evamun
+                                                                            INNER JOIN agromapas.eva_mpal.v_productodetalle v_prod ON v_prod.codigoagronetproducto = v_evamun.codigoagronetproducto_eva
+                                                                            WHERE v_evamun.anho_eva >= {0} 
+                                                                            AND v_evamun.anho_eva <= {1}
+                                                                            AND v_evamun.codigomunicipio_eva = '{2}'
+                                                                            GROUP BY v_evamun.anho_eva, v_prod.nombrecomun
+                                                                            ORDER BY v_evamun.anho_eva, v_prod.nombrecomun;", parameters.anio_inicial, parameters.anio_final, parameters.municipio));
+
+                    Chart chart = new Chart { series = new List<Series>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            chart.subtitle = "Área sembrada de " + parameters.anio_inicial + " a " + parameters.anio_final;
+                            foreach (var productGroup in (from r in results.AsEnumerable()
+                                                         group r by r["producto"]))
+                            {
+                                var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in productGroup)
+                                {
+                                    var data = new Data { name = Convert.ToString(anioData["anio"]), y = Convert.ToDouble(anioData["area_sembrada"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                        case 2:
+                            chart.subtitle = "Área cosechada de " + parameters.anio_inicial + " a " + parameters.anio_final;
+                            foreach (var productGroup in (from r in results.AsEnumerable()
+                                                         group r by r["producto"]))
+                            {
+                                var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in productGroup)
+                                {
+                                    var data = new Data { name = Convert.ToString(anioData["anio"]), y = Convert.ToDouble(anioData["area_cosechada"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                        case 3:
+                            chart.subtitle = "Producción de " + parameters.anio_inicial + " a " + parameters.anio_final;
+                            foreach (var productGroup in (from r in results.AsEnumerable()
+                                                         group r by r["producto"]))
+                            {
+                                var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in productGroup)
+                                {
+                                    var data = new Data { name = Convert.ToString(anioData["anio"]), y = Convert.ToDouble(anioData["produccion"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                        case 4:
+                            chart.subtitle = "Rendimiento de " + parameters.anio_inicial + " a " + parameters.anio_final;
+                            foreach (var productGroup in (from r in results.AsEnumerable()
+                                                         group r by r["producto"]))
+                            {
+                                var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in productGroup)
+                                {
+                                    var data = new Data { name = Convert.ToString(anioData["anio"]), y = Convert.ToDouble(anioData["rendimiento"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            Table table = new Table
+                            {
+                                rows = adapter.GetDataTable(String.Format(@"SELECT
+                                                                            v_evamun.anho_eva as anio,
+                                                                            v_prod.nombrecomun as producto,
+                                                                            SUM(v_evamun.areasembrada_eva) as area_sembrada,
+                                                                            SUM(v_evamun.areacosechada_eva) as area_cosechada,
+                                                                            SUM(v_evamun.produccion_eva) as produccion,
+                                                                            SUM(v_evamun.rendimiento_eva) as rendimiento
+                                                                            FROM agromapas.eva_mpal.v_evamunicipal v_evamun
+                                                                            INNER JOIN agromapas.eva_mpal.v_productodetalle v_prod ON v_prod.codigoagronetproducto = v_evamun.codigoagronetproducto_eva
+                                                                            WHERE v_evamun.anho_eva >= {0} 
+                                                                            AND v_evamun.anho_eva <= {1}
+                                                                            AND v_evamun.codigomunicipio_eva = '{2}'
+                                                                            GROUP BY v_evamun.anho_eva, v_prod.nombrecomun
+                                                                            ORDER BY v_evamun.anho_eva, v_prod.nombrecomun;", parameters.anio_inicial, parameters.anio_final, parameters.municipio))
+                            };
+                            returnData = (Table)table;
+                            break;
+                    }
+                    break;
+            }
+
+
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
     }
 }
