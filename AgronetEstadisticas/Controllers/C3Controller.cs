@@ -867,15 +867,8 @@ namespace AgronetEstadisticas.Controllers
                     {
                         case 1:
 
-                            String sqlp1 = @" SELECT DISTINCT
-                                             YEAR(PreciosConsumidor.fecha_PreciosConsumidor) as anios
- 
-                                             FROM   (AgronetCadenas.consumidor.PreciosConsumidor PreciosConsumidor 
-	                                            INNER JOIN AgronetCadenas.Leche.Divipola Divipola 
-                                             ON PreciosConsumidor.codigoCiudad_PreciosConsumidor=Divipola.codigoMunicipio) 
-	                                            INNER JOIN AgronetCadenas.consumidor.producto producto 
-                                             ON PreciosConsumidor.codigoProducto_PreciosConsumidor=producto.codigo_Producto
-                                             ORDER BY YEAR(PreciosConsumidor.fecha_PreciosConsumidor)";
+                            String sqlp1 = @"select DISTINCT YEAR(fecha_PreciosConsumidor) anios from [AgronetCadenas].consumidor.PreciosConsumidor
+order by YEAR(fecha_PreciosConsumidor);";
 
                             DataTable datap1 = adapter.GetDatatable(sqlp1);
                             Parameter param1 = new Parameter { name = "anios" , data = new List<ParameterData>() };
@@ -890,18 +883,16 @@ namespace AgronetEstadisticas.Controllers
                             break;
                         case 2:
 
-                            String sqlp2 = @" SELECT DISTINCT Divipola.nombreMunicipio as municipios
-                                            FROM   (AgronetCadenas.consumidor.PreciosConsumidor PreciosConsumidor 
-	                                        INNER JOIN AgronetCadenas.Leche.Divipola Divipola 
-                                            ON PreciosConsumidor.codigoCiudad_PreciosConsumidor=Divipola.codigoMunicipio) 
-	                                        INNER JOIN AgronetCadenas.consumidor.producto producto 
-                                            ON PreciosConsumidor.codigoProducto_PreciosConsumidor=producto.codigo_Producto
-                                            ORDER BY Divipola.nombreMunicipio";
+                            String sqlp2 = @"SELECT     TOP (100) PERCENT [AgronetCadenas].consumidor.PreciosConsumidor.codigoCiudad_PreciosConsumidor, [AgronetCadenas].Leche.Divipola.nombreMunicipio
+FROM         [AgronetCadenas].consumidor.PreciosConsumidor
+INNER JOIN   [AgronetCadenas].Leche.Divipola ON [AgronetCadenas].consumidor.PreciosConsumidor.codigoCiudad_PreciosConsumidor = [AgronetCadenas].Leche.Divipola.codigoMunicipio 
+GROUP BY [AgronetCadenas].consumidor.PreciosConsumidor.codigoCiudad_PreciosConsumidor, [AgronetCadenas].Leche.Divipola.nombreMunicipio 
+ORDER BY [AgronetCadenas].Leche.Divipola.nombreMunicipio";
 
                             DataTable datap2 = adapter.GetDatatable(sqlp2);
                             Parameter param2 = new Parameter { name = "municipios" , data = new List<ParameterData>() };
-                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"municipios"])){
-                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                            foreach (var d in (from p in datap2.AsEnumerable() select p)){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombreMunicipio"]), value = Convert.ToString(d["codigoCiudad_PreciosConsumidor"]) };
                                 param2.data.Add(parameter);
                             }
 
@@ -909,8 +900,21 @@ namespace AgronetEstadisticas.Controllers
 
                             break;
                         case 3:
+                            String sqlp3 = @"USE AgronetCadenas;
+SELECT     consumidor.PreciosConsumidor.codigoProducto_PreciosConsumidor, consumidor.producto.descripcion_Producto 
+FROM         consumidor.PreciosConsumidor
+INNER JOIN    consumidor.producto ON consumidor.PreciosConsumidor.codigoProducto_PreciosConsumidor = consumidor.producto.codigo_Producto
+GROUP BY consumidor.PreciosConsumidor.codigoProducto_PreciosConsumidor, consumidor.producto.descripcion_Producto
+HAVING      (consumidor.producto.descripcion_Producto LIKE N'leche%')";
 
+                            DataTable datap3 = adapter.GetDatatable(sqlp3);
+                            Parameter param3 = new Parameter { name = "productos" , data = new List<ParameterData>() };
+                            foreach (var d in (from p in datap3.AsEnumerable() select p)){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion_Producto"]), value = Convert.ToString(d["codigoProducto_PreciosConsumidor"]) };
+                                param3.data.Add(parameter);
+                            }
 
+                            returnData = (Parameter)param3;
 
                             break;
                     }
@@ -919,10 +923,31 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable results = adapter.GetDatatable(String.Format(@"SELECT producto.descripcion_Producto, PreciosConsumidor.fecha_PreciosConsumidor, Divipola.nombreMunicipio, PreciosConsumidor.precio_PreciosConsumidor
+FROM   (AgronetCadenas.consumidor.PreciosConsumidor PreciosConsumidor
+ INNER JOIN AgronetCadenas.Leche.Divipola Divipola ON PreciosConsumidor.codigoCiudad_PreciosConsumidor=Divipola.codigoMunicipio) 
+ INNER JOIN AgronetCadenas.consumidor.producto producto ON PreciosConsumidor.codigoProducto_PreciosConsumidor=producto.codigo_Producto
+WHERE PreciosConsumidor.fecha_PreciosConsumidor BETWEEN '{0}' AND '{1}'
+AND  PreciosConsumidor.codigoProducto_PreciosConsumidor = {2}
+AND PreciosConsumidor.codigoCiudad_PreciosConsumidor IN (" + string.Join(",", parameters.ciudad.Select(d => "'" + d + "'")) + @")
+ORDER BY Divipola.nombreMunicipio, PreciosConsumidor.fecha_PreciosConsumidor", parameters.fecha_inicial, parameters.fecha_final, parameters.producto)); 
+                            
+                            Chart chart = new Chart { subtitle = "", series = new List<Series>() };
+                            foreach (var innerGroup in (from d in results.AsEnumerable()
+                                                        group d by d["nombreMunicipio"]))
+                            {
+                                var serie = new Series { name = innerGroup.Key.ToString(), data = new List<Data>() };
+                                foreach (var element in innerGroup)
+                                {
+                                    var name = Convert.ToDateTime(element["fecha_PreciosConsumidor"]);
+                                    var y = Convert.ToDouble(element["precio_PreciosConsumidor"]);
+                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
+                                    serie.data.Add(data);
+                                }
+                                chart.series.Add(serie);
+
+                            }
+                            returnData = (Chart)chart;
                             break;
                     }
                     break;
@@ -930,10 +955,17 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable tableResults = adapter.GetDatatable(String.Format(@"SELECT producto.descripcion_Producto, PreciosConsumidor.fecha_PreciosConsumidor, Divipola.nombreMunicipio, PreciosConsumidor.precio_PreciosConsumidor
+FROM   (AgronetCadenas.consumidor.PreciosConsumidor PreciosConsumidor
+ INNER JOIN AgronetCadenas.Leche.Divipola Divipola ON PreciosConsumidor.codigoCiudad_PreciosConsumidor=Divipola.codigoMunicipio) 
+ INNER JOIN AgronetCadenas.consumidor.producto producto ON PreciosConsumidor.codigoProducto_PreciosConsumidor=producto.codigo_Producto
+WHERE PreciosConsumidor.fecha_PreciosConsumidor BETWEEN '{0}' AND '{1}'
+AND  PreciosConsumidor.codigoProducto_PreciosConsumidor = {2}
+AND PreciosConsumidor.codigoCiudad_PreciosConsumidor IN (" + string.Join(",", parameters.ciudad.Select(d => "'" + d + "'")) + @")
+ORDER BY Divipola.nombreMunicipio, PreciosConsumidor.fecha_PreciosConsumidor", parameters.fecha_inicial, parameters.fecha_final, parameters.producto)); 
+
+                            Table table = new Table { rows = tableResults };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
@@ -978,21 +1010,17 @@ namespace AgronetEstadisticas.Controllers
                             break;
                         case 2:
 
-                            String sqlp2 = @"SELECT 
-                                            AgronetCadenas.compraLeche.precioDepartamental.codigoDepartamento_PrecioDepartamental as codigoDepartamento,
-                                             AgronetCadenas.Leche.regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento
-                                             FROM  AgronetCadenas.compraLeche.precioDepartamental 
-                                             INNER JOIN   AgronetCadenas.Leche.regionDepartamento 
-                                             ON AgronetCadenas.compraLeche.precioDepartamental.codigoDepartamento_PrecioDepartamental = 
-                                             AgronetCadenas.Leche.regionDepartamento.codigoDepartamento_RegionDepartamento 
-                                             GROUP BY AgronetCadenas.compraLeche.precioDepartamental.codigoDepartamento_PrecioDepartamental, 
-                                             AgronetCadenas.Leche.regionDepartamento.descripcionDepartamento_RegionDepartamento";
+                            String sqlp2 = @"USE AgronetCadenas;
+SELECT compraLeche.precioDepartamental.codigoDepartamento_PrecioDepartamental, Leche.regionDepartamento.descripcionDepartamento_RegionDepartamento 
+FROM         compraLeche.precioDepartamental 
+INNER JOIN   Leche.regionDepartamento ON compraLeche.precioDepartamental.codigoDepartamento_PrecioDepartamental = Leche.regionDepartamento.codigoDepartamento_RegionDepartamento 
+GROUP BY compraLeche.precioDepartamental.codigoDepartamento_PrecioDepartamental, Leche.regionDepartamento.descripcionDepartamento_RegionDepartamento";
 
                             DataTable datap2 = adapter.GetDatatable(sqlp2);
                             Parameter param2 = new Parameter { name = "departamentos", data = new List<ParameterData>() };
-                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"departamento"]))
+                            foreach (var d in (from p in datap2.AsEnumerable() select p))
                             {
-                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcionDepartamento_RegionDepartamento"]), value = Convert.ToString(d["codigoDepartamento_PrecioDepartamental"]) };
                                 param2.data.Add(parameter);
                             }
 
@@ -1013,7 +1041,7 @@ namespace AgronetEstadisticas.Controllers
                                 )
                                 insert into #SP_PRECIOS_LECHE_GANADERO_DEPTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_GANADERO_DEPTO]
 		                                @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
-		                                @Fecha_final = N'" + parameters.fecha_final + @"-10-01'
+		                                @Fecha_final = N'" + parameters.fecha_final + @"-12-31'
 
                                 SELECT 
                                 regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento, 
@@ -1024,8 +1052,8 @@ namespace AgronetEstadisticas.Controllers
                                 ISNULL(#SP_PRECIOS_LECHE_GANADERO_DEPTO.VariacionAnualPrecio,0) as variacionVolumen
                                 FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_GANADERO_DEPTO 
                                 ON #SP_PRECIOS_LECHE_GANADERO_DEPTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento 
-                                WHERE #SP_PRECIOS_LECHE_GANADERO_DEPTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
-                                 and regionDepartamento.descripcionDepartamento_RegionDepartamento in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                WHERE #SP_PRECIOS_LECHE_GANADERO_DEPTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
+                                 and  #SP_PRECIOS_LECHE_GANADERO_DEPTO.codigoDepartamento in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
                                 DROP TABLE #SP_PRECIOS_LECHE_GANADERO_DEPTO";
 
 
@@ -1081,7 +1109,7 @@ namespace AgronetEstadisticas.Controllers
                                                 )
                                                 insert into #SP_PRECIOS_LECHE_GANADERO_DEPTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_GANADERO_DEPTO]
 		                                                @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
-		                                                @Fecha_final = N'" + parameters.fecha_final + @"-10-01'
+		                                                @Fecha_final = N'" + parameters.fecha_final + @"-12-31'
 
                                                 SELECT 
                                                 regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento, 
@@ -1092,8 +1120,8 @@ namespace AgronetEstadisticas.Controllers
                                                 ISNULL(#SP_PRECIOS_LECHE_GANADERO_DEPTO.VariacionAnualPrecio,0) as variacionVolumen
                                                 FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_LECHE_GANADERO_DEPTO 
                                                 ON #SP_PRECIOS_LECHE_GANADERO_DEPTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento 
-                                                WHERE #SP_PRECIOS_LECHE_GANADERO_DEPTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
-                                                    and regionDepartamento.descripcionDepartamento_RegionDepartamento in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                                WHERE #SP_PRECIOS_LECHE_GANADERO_DEPTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
+                                                    and #SP_PRECIOS_LECHE_GANADERO_DEPTO.codigoDepartamento in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
                                                 DROP TABLE #SP_PRECIOS_LECHE_GANADERO_DEPTO";
 
                             DataTable data = adapter.GetDatatable(sqlTabla1);

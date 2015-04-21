@@ -255,6 +255,8 @@
     <Compile Include="Models\parametersBinding\report609.cs" />
     <Compile Include="Models\parametersBinding\report701.cs" />
     <Compile Include="Models\parametersBinding\report702.cs" />
+    <Compile Include="Models\parametersBinding\report801.cs" />
+    <Compile Include="Models\parametersBinding\report802.cs" />
     <Compile Include="Models\parametersBinding\report803.cs" />
     <Compile Include="Models\parametersBinding\report804.cs" />
     <Compile Include="Models\parametersBinding\report805.cs" />
@@ -264,6 +266,7 @@
     <Compile Include="Models\parametersBinding\report809.cs" />
     <Compile Include="Models\parametersBinding\report810.cs" />
     <Compile Include="Models\parametersBinding\report514.cs" />
+    <Compile Include="Models\parametersBinding\report811.cs" />
     <Compile Include="Models\Series.cs" />
     <Compile Include="Models\Table.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

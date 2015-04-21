@@ -21,6 +21,184 @@ namespace AgronetEstadisticas.Controllers
     [EnableCors(origins: "*", headers: "*", methods: "post")]
     public class C8Controller : ApiController
     {
+        [Route("api/Report/801")]
+        public IHttpActionResult postReport810(report801 parameters)
+        {
+            Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter param = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            param.name = "anio";
+                            foreach (var d in (from p in adapter.GetDatatable(@"USE [AgronetIndicadores];
+                                                                                select 
+                                                                                distinct year(dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios) as anho
+                                                                                from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                                inner join dbo.Indicadores_IndicadoresDiarios
+                                                                                on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios =
+                                                                                dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                                where dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 1
+                                                                                order by  year(dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios);").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anho"]), value = Convert.ToString(d["anho"]) };
+                                param.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param;
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    DataTable results = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
+                                                                            select  DATEDIFF(ss, '01/01/1970', [fecha_IndicadoresDiarios]) as fechaunix, [fecha_IndicadoresDiarios], [nombre_TipoIndDiarios], [valorDTF_IndicadoresDiarios]
+                                                                            from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                            inner join dbo.Indicadores_IndicadoresDiarios on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 
+                                                                            dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                            where dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios
+                                                                            between '{0}' and '{1}'
+                                                                            and dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 1
+                                                                            order by fecha_IndicadoresDiarios", parameters.anio_inicial, parameters.anio_final));
+                    Chart chart = new Chart { series = new List<Series>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            chart.subtitle = "";
+                            
+                            var serie = new Series { name = "DTF", data = new List<Data>() };
+                            foreach (var d in  (from r in results.AsEnumerable()
+                                                       select r))
+                            {
+                                var data = new Data { name = Convert.ToString(d["fechaunix"]), y = Convert.ToDouble(d["valorDTF_IndicadoresDiarios"]) };
+                                serie.data.Add(data);
+
+                            }
+                            chart.series.Add(serie);
+
+                            returnData = (Chart)chart;
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable tableResults = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
+                                                                            select [fecha_IndicadoresDiarios], [nombre_TipoIndDiarios], [valorDTF_IndicadoresDiarios]
+                                                                            from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                            inner join dbo.Indicadores_IndicadoresDiarios on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 
+                                                                            dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                            where dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios
+                                                                            between '{0}' and '{1}'
+                                                                            and dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 1
+                                                                            order by fecha_IndicadoresDiarios", parameters.anio_inicial, parameters.anio_final));
+                            Table table = new Table { rows = tableResults };
+                            returnData = (Table)table;
+                            break;
+                    }
+                    break;
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/802")]
+        public IHttpActionResult postReport810(report802 parameters)
+        {
+            Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter param = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            param.name = "anio";
+                            foreach (var d in (from p in adapter.GetDatatable(@"USE [AgronetIndicadores];
+                                                                                select 
+                                                                                distinct year(dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios) as anho
+                                                                                from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                                inner join dbo.Indicadores_IndicadoresDiarios
+                                                                                on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios =
+                                                                                dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                                where dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 2
+                                                                                order by  year(dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios);").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anho"]), value = Convert.ToString(d["anho"]) };
+                                param.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param;
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    DataTable results = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
+                                                                            select  DATEDIFF(ss, '01/01/1970', [fecha_IndicadoresDiarios]) as fechaunix, [fecha_IndicadoresDiarios], [nombre_TipoIndDiarios], [valorDTF_IndicadoresDiarios]
+                                                                            from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                            inner join dbo.Indicadores_IndicadoresDiarios on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 
+                                                                            dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                            where dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios
+                                                                            between '{0}' and '{1}'
+                                                                            and dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 2
+                                                                            order by fecha_IndicadoresDiarios", parameters.anio_inicial, parameters.anio_final));
+                    Chart chart = new Chart { series = new List<Series>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            chart.subtitle = "";
+
+                            var serie = new Series { name = "Tasa interbancaria", data = new List<Data>() };
+                            foreach (var d in (from r in results.AsEnumerable()
+                                               select r))
+                            {
+                                var data = new Data { name = Convert.ToString(d["fechaunix"]), y = Convert.ToDouble(d["valorDTF_IndicadoresDiarios"]) };
+                                serie.data.Add(data);
+
+                            }
+                            chart.series.Add(serie);
+
+                            returnData = (Chart)chart;
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable tableResults = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
+                                                                            select [fecha_IndicadoresDiarios], [nombre_TipoIndDiarios], [valorDTF_IndicadoresDiarios]
+                                                                            from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                            inner join dbo.Indicadores_IndicadoresDiarios on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 
+                                                                            dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                            where dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios
+                                                                            between '{0}' and '{1}'
+                                                                            and dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 2
+                                                                            order by fecha_IndicadoresDiarios", parameters.anio_inicial, parameters.anio_final));
+                            Table table = new Table { rows = tableResults };
+                            returnData = (Table)table;
+                            break;
+                    }
+                    break;
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
         [Route("api/Report/803")]
         public IHttpActionResult postReport803(report803 parameters)
         {
@@ -456,6 +634,95 @@ namespace AgronetEstadisticas.Controllers
                         case 2:
                             break;
                         case 3:
+                            break;
+                    }
+                    break;
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        [Route("api/Report/811")]
+        public IHttpActionResult postReport810(report811 parameters)
+        {
+            Object returnData = null;
+            SQLAdapter adapter = new SQLAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter param = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            param.name = "anio";
+                            foreach (var d in (from p in adapter.GetDatatable(@"USE [AgronetIndicadores];
+                                                                                select 
+                                                                                distinct year(dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios) as anho
+                                                                                from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                                inner join dbo.Indicadores_IndicadoresDiarios
+                                                                                on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios =
+                                                                                dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                                where dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 3
+                                                                                order by  year(dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios);").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anho"]), value = Convert.ToString(d["anho"]) };
+                                param.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param;
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    DataTable results = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
+                                                                            select  DATEDIFF(ss, '01/01/1970', [fecha_IndicadoresDiarios]) as fechaunix, [fecha_IndicadoresDiarios], [nombre_TipoIndDiarios], [valorDTF_IndicadoresDiarios]
+                                                                            from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                            inner join dbo.Indicadores_IndicadoresDiarios on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 
+                                                                            dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                            where dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios
+                                                                            between '{0}' and '{1}'
+                                                                            and dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 3
+                                                                            order by fecha_IndicadoresDiarios", parameters.anio_inicial, parameters.anio_final));
+                    Chart chart = new Chart { series = new List<Series>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            chart.subtitle = "";
+
+                            var serie = new Series { name = "Tasa interés activa", data = new List<Data>() };
+                            foreach (var d in (from r in results.AsEnumerable()
+                                               select r))
+                            {
+                                var data = new Data { name = Convert.ToString(d["fechaunix"]), y = Convert.ToDouble(d["valorDTF_IndicadoresDiarios"]) };
+                                serie.data.Add(data);
+
+                            }
+                            chart.series.Add(serie);
+
+                            returnData = (Chart)chart;
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable tableResults = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
+                                                                            select [fecha_IndicadoresDiarios], [nombre_TipoIndDiarios], [valorDTF_IndicadoresDiarios]
+                                                                            from dbo.Indicadores_TipoIndicadoresDiarios
+                                                                            inner join dbo.Indicadores_IndicadoresDiarios on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 
+                                                                            dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
+                                                                            where dbo.Indicadores_IndicadoresDiarios.fecha_IndicadoresDiarios
+                                                                            between '{0}' and '{1}'
+                                                                            and dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 3
+                                                                            order by fecha_IndicadoresDiarios", parameters.anio_inicial, parameters.anio_final));
+                            Table table = new Table { rows = tableResults };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
