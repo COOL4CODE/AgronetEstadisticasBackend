@@ -11,8 +11,8 @@ namespace AgronetEstadisticas.Models.parametersBinding
 
         public string grupo { get; set; }
         public string tipo_variacion { get; set; }
-        public DateTime fecha_inicial { get; set; }
+        public string fecha_inicial { get; set; }
 
-        public DateTime fecha_final { get; set; }
+        public string fecha_final { get; set; }
     }
 }

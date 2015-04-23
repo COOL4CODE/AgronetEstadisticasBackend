@@ -161,7 +161,8 @@ namespace AgronetEstadisticas.Controllers
                             foreach (var d in (from r in results.AsEnumerable()
                                                select r))
                             {
-                                var data = new Data { name = Convert.ToString(d["fechaunix"]), y = Convert.ToDouble(d["valorDTF_IndicadoresDiarios"]) };
+                                //var data = new Data { name = Convert.ToString(d["fechaunix"]), y = Convert.ToDouble(d["valorDTF_IndicadoresDiarios"]) };
+                                var data = new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(d["fecha_IndicadoresDiarios"]))), y = Convert.ToDouble(d["valorDTF_IndicadoresDiarios"]) };
                                 serie.data.Add(data);
 
                             }
@@ -489,7 +490,7 @@ namespace AgronetEstadisticas.Controllers
                             returnData = (Parameter)niveles;
                             break;
                         case 2:
-                            Parameter grupos = new Parameter { name = "niveles", data = new List<ParameterData>() };
+                            Parameter grupos = new Parameter { name = "Grupos", data = new List<ParameterData>() };
                            
                             grupos.data.Add(new ParameterData { name = "Total", value = "10" });
                             grupos.data.Add(new ParameterData { name = "Alimentos", value = "1" });
@@ -513,16 +514,51 @@ namespace AgronetEstadisticas.Controllers
 
                             returnData = (Parameter)tipos_variaciones;
                             break;
+                        case 4:
+                            Parameter param = new Parameter { name = "anios", data = new List<ParameterData>() };
+
+                            foreach (var d in (from p in adapter.GetDatatable(@"USE [AgronetIndicadores];
+                                                                                SELECT DISTINCT YEAR([fecha_ipcNacional]) as anho FROM [AgronetIndicadores].[dbo].[Indicadores_IPCNacional]
+                                                                                WHERE YEAR([fecha_ipcNacional]) >= '2009'
+                                                                                ORDER BY YEAR([fecha_ipcNacional]);").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anho"]), value = Convert.ToString(d["anho"]) };
+                                param.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param;
+
+                            break;
                     }
                     break;
                 case "grafico":
+                    DataTable results = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores]
+                                                                            EXEC	[dbo].[SP_IPC_NACIONAL]
+		                                                                            @Fecha_inicial = N'{0}-01-01',
+		                                                                            @Fecha_final = N'{1}-12-31',
+		                                                                            @Nivel = {2},
+		                                                                            @Sector = {3},
+		                                                                            @TipoVariacion = {4}", parameters.fecha_inicial, parameters.fecha_final, parameters.nivel, parameters.grupo, parameters.tipo_variacion));
+                    Chart chart = new Chart { series = new List<Series>() };
+
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            chart.subtitle = "";
+                            foreach (var descGroup in (from r in results.AsEnumerable()
+                                                          group r by r["descripcionGrupo"]))
+                            {
+                                var serie = new Series { name = descGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in descGroup)
+                                {
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(anioData["fecha"]))), y = Convert.ToDouble(anioData["ipc"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
                             break;
                     }
                     break;
@@ -530,10 +566,15 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable tableResults = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores]
+                                                                            EXEC	[dbo].[SP_IPC_NACIONAL]
+		                                                                            @Fecha_inicial = N'{0}-01-01',
+		                                                                            @Fecha_final = N'{1}-12-31',
+		                                                                            @Nivel = {2},
+		                                                                            @Sector = {3},
+		                                                                            @TipoVariacion = {4}", parameters.fecha_inicial, parameters.fecha_final, parameters.nivel, parameters.grupo, parameters.tipo_variacion));
+                            Table table = new Table { rows = tableResults };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
@@ -558,21 +599,67 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
+                            Parameter param1 = new Parameter { name = "anios", data = new List<ParameterData>() };
+
+                            foreach (var d in (from p in adapter.GetDatatable(@"USE [AgronetIndicadores];
+                                                                                SELECT DISTINCT YEAR(fecha_IPPExpo) anho FROM Indicadores_IPPExpo
+                                                                                ORDER BY YEAR(fecha_IPPExpo);").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anho"]), value = Convert.ToString(d["anho"]) };
+                                param1.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param1;
                             break;
                         case 2:
+                            Parameter param2 = new Parameter { name = "grupo", data = new List<ParameterData>() };
+
+                            foreach (var d in (from p in adapter.GetDatatable(@"USE [AgronetIndicadores];
+SELECT codigoGrupo_GruposIPP, descripcionGrupo_GruposIPP from Indicadores_GruposIPP order by descripcionGrupo_GruposIPP;").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcionGrupo_GruposIPP"]), value = Convert.ToString(d["codigoGrupo_GruposIPP"]) };
+                                param2.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param2;
                             break;
                         case 3:
+                            Parameter categorias = new Parameter { name = "categorias", data = new List<ParameterData>() };
+
+                            categorias.data.Add(new ParameterData { name = "Exportados", value = "1" });
+                            categorias.data.Add(new ParameterData { name = "Importados", value = "2" });
+                            categorias.data.Add(new ParameterData { name = "Consumidos", value = "3" });
+                            categorias.data.Add(new ParameterData { name = "Total nacional", value = "4" });
+
+                            returnData = (Parameter)categorias;
                             break;
                     }
                     break;
                 case "grafico":
+                    DataTable results = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
+                                                                            EXEC	[dbo].[SP_IPP]
+		                                                                            @FECHA_INICIAL = N'{0}',
+		                                                                            @FECHA_FINAL = N'{1}',
+		                                                                            @PARAMETRO = {2},
+		                                                                            @GRUPO = {3}", parameters.fecha_inicial, parameters.fecha_final, parameters.categoria, parameters.grupo));
+                    Chart chart = new Chart { series = new List<Series>() };
+
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            chart.subtitle = "";
+                            
+                            var serie = new Series { name = "", data = new List<Data>() };
+                            foreach (var anioData in (from r in results.AsEnumerable()
+                                                          select r))
+                            {
+                                var data = new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(anioData["fecha"]))), y = Convert.ToDouble(anioData["valor"]) };
+                                serie.data.Add(data);
+
+                            }
+                            chart.series.Add(serie);
+                            
+                            returnData = (Chart)chart;
                             break;
                     }
                     break;
@@ -580,10 +667,15 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable tableResults = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
+                                                                            EXEC	[dbo].[SP_IPP]
+		                                                                            @FECHA_INICIAL = N'{0}',
+		                                                                            @FECHA_FINAL = N'{1}',
+		                                                                            @PARAMETRO = {2},
+		                                                                            @GRUPO = {3}", parameters.fecha_inicial, parameters.fecha_final, parameters.categoria, parameters.grupo));
+                    
+                            Table table = new Table { rows = tableResults };
+                            returnData = (Table)table;
                             break;
                     }
                     break;
@@ -734,6 +826,14 @@ namespace AgronetEstadisticas.Controllers
             }
 
             return Ok(returnData);
+        }
+
+        private long ToUnixTimestamp(DateTime target)
+        {
+            var date = new DateTime(1970, 1, 1, 0, 0, 0, target.Kind);
+            var unixTimestamp = System.Convert.ToInt64((target - date).TotalSeconds);
+
+            return unixTimestamp;
         }
     }
 }
