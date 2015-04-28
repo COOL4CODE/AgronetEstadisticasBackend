@@ -700,32 +700,109 @@ SELECT codigoGrupo_GruposIPP, descripcionGrupo_GruposIPP from Indicadores_Grupos
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            Parameter param1 = new Parameter { name = "anios", data = new List<ParameterData>() };
+
+                            foreach (var d in (from p in adapter.GetDatatable(@"USE AgronetIndicadores;
+                                                                                SELECT DISTINCT [anho_EmpleoRuralTrim] anho FROM Indicadores_EmpleoRuralTrimestral
+                                                                                ORDER BY [anho_EmpleoRuralTrim];").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anho"]), value = Convert.ToString(d["anho"]) };
+                                param1.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param1;
                             break;
                     }
                     break;
                 case "grafico":
-                    switch (parameters.id)
+
+                    DataTable results = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores]
+                                                                            CREATE TABLE #SP_EMPLEO_RURAL_TRIMESTRAL (
+	                                                                            ahno date,
+	                                                                            trimestre int,
+	                                                                            codVariable int,
+	                                                                            codZona int,
+	                                                                            valor float
+                                                                            )
+                                                                            INSERT INTO #SP_EMPLEO_RURAL_TRIMESTRAL EXEC [dbo].[SP_EMPLEO_RURAL_TRIMESTRAL]
+		                                                                            @Anho_inicial = {0},
+		                                                                            @Anho_final = {1}
+
+                                                                            SELECT YEAR(#SP_EMPLEO_RURAL_TRIMESTRAL.ahno) anio,
+                                                                            #SP_EMPLEO_RURAL_TRIMESTRAL.trimestre, 
+                                                                            Indicadores_EmpleoRuralZonas.descripcion_Zona, 
+                                                                            Indicadores_EmpleoRuralVariables.descripcion_Variable,
+                                                                            #SP_EMPLEO_RURAL_TRIMESTRAL.valor,
+                                                                            Indicadores_EmpleoRuralVariables.unidad_Variable
+                                                                            FROM   AgronetIndicadores.dbo.Indicadores_EmpleoRuralVariables Indicadores_EmpleoRuralVariables
+                                                                            INNER JOIN #SP_EMPLEO_RURAL_TRIMESTRAL ON Indicadores_EmpleoRuralVariables.codigo_Variable = #SP_EMPLEO_RURAL_TRIMESTRAL.codVariable
+                                                                            INNER JOIN AgronetIndicadores.dbo.Indicadores_EmpleoRuralZonas Indicadores_EmpleoRuralZonas ON  Indicadores_EmpleoRuralZonas.codigo_Zona = #SP_EMPLEO_RURAL_TRIMESTRAL.codZona
+                                                                            ORDER BY Indicadores_EmpleoRuralVariables.descripcion_Variable, Indicadores_EmpleoRuralZonas.descripcion_Zona, YEAR(#SP_EMPLEO_RURAL_TRIMESTRAL.ahno), #SP_EMPLEO_RURAL_TRIMESTRAL.trimestre
+
+                                                                            DROP TABLE #SP_EMPLEO_RURAL_TRIMESTRAL;", parameters.anio_inicial, parameters.anio_final));
+
+                    var queryCharts = from r in results.AsEnumerable()
+                                      group r by r["descripcion_Variable"] into chartGroup
+                                from seriesGroup in
+                                    (from r in chartGroup
+                                     group r by r["descripcion_Zona"])
+                                group seriesGroup by chartGroup.Key;
+
+                    int i = 1;
+                    foreach (var outerGroup in queryCharts)
                     {
-                        case 1:
+                        if (i == parameters.id)
+                        {
+                            Chart chart = new Chart { subtitle = outerGroup.Key.ToString(), series = new List<Series>() };
+                            foreach (var innerGroup in outerGroup)
+                            {
+                                var serie = new Series { name = innerGroup.Key.ToString(), data = new List<Data>() };
+                                foreach (var element in innerGroup)
+                                {
+                                    var data = new Data { name = Convert.ToString(element["anio"] + " Trim " + element["trimestre"]), y = Convert.ToDouble(element["valor"]) };
+                                    serie.data.Add(data);
+                                }
+                                chart.series.Add(serie);
+
+                            }
+                            returnData = (Chart)chart;
                             break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
+                        }
+                        i++;
                     }
                     break;
                 case "tabla":
                     switch (parameters.id)
                     {
                         case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
+                            DataTable tableResults = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores]
+                                                                                        CREATE TABLE #SP_EMPLEO_RURAL_TRIMESTRAL (
+	                                                                                        ahno date,
+	                                                                                        trimestre int,
+	                                                                                        codVariable int,
+	                                                                                        codZona int,
+	                                                                                        valor float
+                                                                                        )
+                                                                                        INSERT INTO #SP_EMPLEO_RURAL_TRIMESTRAL EXEC [dbo].[SP_EMPLEO_RURAL_TRIMESTRAL]
+		                                                                                        @Anho_inicial = {0},
+		                                                                                        @Anho_final = {1}
+
+                                                                                        SELECT YEAR(#SP_EMPLEO_RURAL_TRIMESTRAL.ahno) anio,
+                                                                                        #SP_EMPLEO_RURAL_TRIMESTRAL.trimestre, 
+                                                                                        Indicadores_EmpleoRuralZonas.descripcion_Zona, 
+                                                                                        Indicadores_EmpleoRuralVariables.descripcion_Variable,
+                                                                                        #SP_EMPLEO_RURAL_TRIMESTRAL.valor,
+                                                                                        Indicadores_EmpleoRuralVariables.unidad_Variable
+                                                                                        FROM   AgronetIndicadores.dbo.Indicadores_EmpleoRuralVariables Indicadores_EmpleoRuralVariables
+                                                                                        INNER JOIN #SP_EMPLEO_RURAL_TRIMESTRAL ON Indicadores_EmpleoRuralVariables.codigo_Variable = #SP_EMPLEO_RURAL_TRIMESTRAL.codVariable
+                                                                                        INNER JOIN AgronetIndicadores.dbo.Indicadores_EmpleoRuralZonas Indicadores_EmpleoRuralZonas ON  Indicadores_EmpleoRuralZonas.codigo_Zona = #SP_EMPLEO_RURAL_TRIMESTRAL.codZona
+                                                                                        ORDER BY Indicadores_EmpleoRuralVariables.descripcion_Variable, Indicadores_EmpleoRuralZonas.descripcion_Zona, YEAR(#SP_EMPLEO_RURAL_TRIMESTRAL.ahno), #SP_EMPLEO_RURAL_TRIMESTRAL.trimestre
+
+                                                                                        DROP TABLE #SP_EMPLEO_RURAL_TRIMESTRAL;", parameters.anio_inicial, parameters.anio_final));
+
+                            Table table = new Table { rows = tableResults };
+                            returnData = (Table)table;
+
                             break;
                     }
                     break;
