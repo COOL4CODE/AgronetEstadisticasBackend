@@ -2148,19 +2148,15 @@ namespace AgronetEstadisticas.Controllers
                             break;
                         case 2:
 
-                            String SQLQuery2 = @"SELECT 
-                                                 DISTINCT 
-                                                 FechaFuturo_IndicadoresPreciosFuturos AS anio,
-                                                 CAST(YEAR(FechaFuturo_IndicadoresPreciosFuturos) AS nvarchar)
-                                                  + ' - ' + DATENAME(month, FechaFuturo_IndicadoresPreciosFuturos) AS descripcion
+                            String SQLQuery2 = @"SELECT DISTINCT YEAR(FechaFuturo_IndicadoresPreciosFuturos) AS anio
                                                  FROM AgronetIndicadores.dbo.Indicadores_PreciosFuturos
                                                 -- PARAMETRO DE PRODUCTO
-                                                 WHERE codProducto_IndicadoresPreciosFuturos =  "+parameters.producto+@"
+                                                 WHERE codProducto_IndicadoresPreciosFuturos =  " + parameters.producto+@"
                                                  ORDER BY anio";
                             DataTable data2 = adapter.GetDatatable(SQLQuery2);
                             Parameter param2 = new Parameter { name = "anios" , data = new List<ParameterData>() };
                             foreach (var d in (from p in data2.AsEnumerable() select p)){
-                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["descripcion"]), value = Convert.ToString(d["anio"]) };
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["anio"]), value = Convert.ToString(d["anio"]) };
                                 param2.data.Add(parameter);
                             }
 
@@ -2208,9 +2204,9 @@ namespace AgronetEstadisticas.Controllers
                                 var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
 
                                 foreach(var seriesData in dataGroup){
-                                    var name = Convert.ToDateTime(seriesData["fecha_IndicadoresPreciosFuturos"]);
+                                    var name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(seriesData["fecha_IndicadoresPreciosFuturos"])));
                                     var y = Convert.ToDouble(seriesData["valor_IndicadoresPreciosFuturos"]);
-                                    var data = new Data { name = String.Format("{0:d}", name), y = y };
+                                    var data = new Data { name = name, y = y };
                                     serie.data.Add(data);
                                 }
                                 chart1.series.Add(serie);
@@ -2270,18 +2266,53 @@ namespace AgronetEstadisticas.Controllers
             SQLAdapter adapter = new SQLAdapter();
             switch (parameters.tipo)
             {
-                
+                case "parametro":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            Parameter param1 = new Parameter { name = "anio" , data = new List<ParameterData>() };
+                            for (int i = 1950; i <= DateTime.Now.Year; i++)
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(i), value = Convert.ToString(i) };
+                                param1.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param1;
+                            break;
+                        case 2:
+                            Parameter param2 = new Parameter { name = "grupo" , data = new List<ParameterData>() };
+                            param2.data.Add(new ParameterData { name = "Diario", value = "Indicadores_TRM_Diario" });
+                            param2.data.Add(new ParameterData { name = "Mensual", value = "Indicadores_TRM" });
+                            returnData = (Parameter)param2;
+                            break;
+
+                    }
+                    break;
                 case "grafico":
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable results = adapter.GetDatatable(String.Format(@"SELECT
+                                                                                    Indicadores_TRM.Fecha as Indicadores_TRM_Fecha, 
+                                                                                    Indicadores_TRM.Valor as Indicadores_TRM_Valor, 
+                                                                                    Indicadores_TRM_Diario.Valor as Indicadores_TRM_Diario_Valor,
+                                                                                    Indicadores_TRM_Diario.Fecha as Indicadores_TRM_Diario_Fecha
+                                                                                    FROM   AgronetIndicadores.dbo.Indicadores_TRM_Diario Indicadores_TRM_Diario INNER JOIN AgronetIndicadores.dbo.Indicadores_TRM Indicadores_TRM ON Indicadores_TRM_Diario.Fecha=Indicadores_TRM.Fecha
+                                                                                    WHERE  Indicadores_TRM.Fecha >= '{0}' AND Indicadores_TRM.Fecha <= '{1}'
+                                                                                    ORDER BY Indicadores_TRM.Fecha, Indicadores_TRM_Diario.Fecha", parameters.fecha_inicial, parameters.fecha_final));
+                            Chart chart = new Chart { subtitle = "", series = new List<Series>() };
+                            Series serie = new Series { name = "TRM", data = new List<Data>() };
 
-                            
+                            foreach (var d in (from dt in results.AsEnumerable()
+                                               select dt))
+                            {
+                                Data data = new Data { name =  Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(d[parameters.grupo + "_Fecha"]))), y = Convert.ToDouble(d[parameters.grupo + "_Valor"])};
+                                serie.data.Add(data);
+                            }
 
-                                break;
-                        case 2:
+                            chart.series.Add(serie);
+
+                            returnData = (Chart)chart;
                             break;
-                        
                     }
                     break;
                 case "tabla":
@@ -2305,10 +2336,10 @@ namespace AgronetEstadisticas.Controllers
                             Table table = new Table { rows = new DataTable() };
 
                             table.rows.Columns.Add("fecha", typeof(DateTime));
-                            table.rows.Columns.Add("valor", typeof(double));
+                            table.rows.Columns.Add("trm", typeof(double));
                             table.rows.Columns.Add("variacion", typeof(double));
 
-                            IEnumerable<double> valores = results.AsEnumerable().Select(x => x.Field<Double>("valor"));
+                            IEnumerable<double> valores = results.AsEnumerable().Select(x => Convert.ToDouble(x["valor"]));
                             
                             for (int i = 0; i < queryResults.Count(); i++) {
 
@@ -2323,8 +2354,6 @@ namespace AgronetEstadisticas.Controllers
 
                             returnData  = (Table)table;
 
-                            break;
-                        case 2:
                             break;
                         
                     }
@@ -2943,6 +2972,14 @@ namespace AgronetEstadisticas.Controllers
             }
 
             return Ok(returnData);
+        }
+
+        private long ToUnixTimestamp(DateTime target)
+        {
+            var date = new DateTime(1970, 1, 1, 0, 0, 0, target.Kind);
+            var unixTimestamp = System.Convert.ToInt64((target - date).TotalSeconds);
+
+            return unixTimestamp;
         }
     }
 }
