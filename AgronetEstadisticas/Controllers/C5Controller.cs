@@ -992,60 +992,51 @@ WHERE ([AgronetSIPSA].dbo.Sipsa_ProductosSemanales.codigoProducto_ProductosSeman
                     {
                         case 1:
                             String sql1 = String.Format(@"create table  #SP_ABASTECIMIENTO_PORPRODUCTO(
-                                                fecha date,
-                                                ciudad nvarchar(5),
-                                                sitio nvarchar(7),
-                                                grupo int,
-                                                toneladas float,
-                                                variacionToneladas float
-                                            )
-                                            insert into #SP_ABASTECIMIENTO_PORPRODUCTO EXEC [AgronetSipsa].[dbo].[SP_ABASTECIMIENTO_PORPRODUCTO]
-		                                            @Fecha_inicial = N'{0}-01-01',
-		                                            @Fecha_final = N'{1}-12-31',
-		                                            @Grupo = {2}
+                                                            fecha date,
+                                                            ciudad nvarchar(5),
+                                                            sitio nvarchar(7),
+                                                            grupo int,
+                                                            toneladas float,
+                                                            variacionToneladas float
+                                                        )
+                                                        insert into #SP_ABASTECIMIENTO_PORPRODUCTO EXEC [AgronetSipsa].[dbo].[SP_ABASTECIMIENTO_PORPRODUCTO]
+		                                                        @Fecha_inicial = N'{0}-01-01',
+		                                                        @Fecha_final = N'{1}-12-31',
+		                                                        @Grupo = {2}
 
-                                            SELECT 
-                                            Abastecimiento_Sitios.sitioSipsa_sitioAbastecimiento, 
-                                            Abastecimiento_Sitios.ciudad_sitioAbastecimiento, 
-                                            Abastecimiento_Ciudades.nombreMunicipio, 
-                                            Abastecimiento_Sitios.sitio_sitioAbastecimiento, 
-                                            Abastecimiento_Grupos.grupo_Grupos, 
-                                            Abastecimiento_Grupos.codigoGrupo_Grupos, 
-                                            Abastecimiento_Sitios.codigo_sitioAbastecimiento,
-                                            DATEDIFF(ss, '01/01/1970', #SP_ABASTECIMIENTO_PORPRODUCTO.fecha) as fechaunix,
-                                            #SP_ABASTECIMIENTO_PORPRODUCTO.fecha,
-                                            #SP_ABASTECIMIENTO_PORPRODUCTO.ciudad,
-                                            #SP_ABASTECIMIENTO_PORPRODUCTO.sitio,
-                                            #SP_ABASTECIMIENTO_PORPRODUCTO.grupo,
-                                            #SP_ABASTECIMIENTO_PORPRODUCTO.toneladas,
-                                            #SP_ABASTECIMIENTO_PORPRODUCTO.variacionToneladas
-                                             FROM   
-                                             (AgronetSIPSA.dbo.Abastecimiento_Grupos Abastecimiento_Grupos 
-                                             CROSS JOIN AgronetSIPSA.dbo.Abastecimiento_Sitios Abastecimiento_Sitios
-                                             ) 
-                                             INNER JOIN AgronetSIPSA.dbo.Abastecimiento_Ciudades Abastecimiento_Ciudades 
-                                             ON Abastecimiento_Sitios.ciudad_sitioAbastecimiento=Abastecimiento_Ciudades.codigoMunicipio
-                                             INNER JOIN #SP_ABASTECIMIENTO_PORPRODUCTO ON Abastecimiento_Sitios.codigo_sitioAbastecimiento = #SP_ABASTECIMIENTO_PORPRODUCTO.sitio
-                                             WHERE  
-                                             --PARAMETROS
-                                             Abastecimiento_Grupos.codigoGrupo_Grupos= {3} 
-                                             AND Abastecimiento_Sitios.ciudad_sitioAbastecimiento IN (" + string.Join(",",parameters.ciudad.Select(d => "'"+d+"'")) +
-                                             @") ORDER BY #SP_ABASTECIMIENTO_PORPRODUCTO.fecha, 
-                                             Abastecimiento_Sitios.sitioSipsa_sitioAbastecimiento
+                                                        SELECT 
+                                                        Abastecimiento_Ciudades.nombreMunicipio, 
+                                                        Abastecimiento_Sitios.sitio_sitioAbastecimiento, 
+                                                        DATEDIFF(ss, '01/01/1970', #SP_ABASTECIMIENTO_PORPRODUCTO.fecha) as fechaunix,
+                                                        #SP_ABASTECIMIENTO_PORPRODUCTO.fecha,
+                                                        SUM(#SP_ABASTECIMIENTO_PORPRODUCTO.toneladas) toneladas
+                                                        FROM   
+                                                        (AgronetSIPSA.dbo.Abastecimiento_Grupos Abastecimiento_Grupos 
+                                                        CROSS JOIN AgronetSIPSA.dbo.Abastecimiento_Sitios Abastecimiento_Sitios
+                                                        ) 
+                                                        INNER JOIN AgronetSIPSA.dbo.Abastecimiento_Ciudades Abastecimiento_Ciudades 
+                                                        ON Abastecimiento_Sitios.ciudad_sitioAbastecimiento=Abastecimiento_Ciudades.codigoMunicipio
+                                                        INNER JOIN #SP_ABASTECIMIENTO_PORPRODUCTO ON Abastecimiento_Sitios.codigo_sitioAbastecimiento = #SP_ABASTECIMIENTO_PORPRODUCTO.sitio
+                                                        WHERE Abastecimiento_Sitios.ciudad_sitioAbastecimiento  IN (" + string.Join(",", parameters.ciudad.Select(d => "'" + d + "'")) + @")
+                                                        GROUP BY Abastecimiento_Ciudades.nombreMunicipio, 
+                                                        Abastecimiento_Sitios.sitio_sitioAbastecimiento, 
+                                                        #SP_ABASTECIMIENTO_PORPRODUCTO.fecha
+                                                        ORDER BY #SP_ABASTECIMIENTO_PORPRODUCTO.fecha
 
-                                            DROP TABLE #SP_ABASTECIMIENTO_PORPRODUCTO",parameters.fecha_inicial, parameters.fecha_final, parameters.grupo, parameters.grupo);
+                                                        DROP TABLE #SP_ABASTECIMIENTO_PORPRODUCTO", parameters.fecha_inicial, parameters.fecha_final, parameters.grupo);
                             DataTable results = adapter.GetDatatable(sql1);
 
                             Chart chart1 = new Chart { subtitle = "", series = new List<Series>() };
 
                             var query1 = from r in results.AsEnumerable()
-                                         group r by r["nombreMunicipio"];
+                                         group r by r["sitio_sitioAbastecimiento"];
 
                             foreach (var deptosGroup in query1)
                             {
-                                var serie1 = new Series { name = deptosGroup.Key.ToString(), data = new List<Data>() };
+                                var serie1 = new Series { data = new List<Data>() };
                                 foreach (var el1 in deptosGroup)
                                 {
+                                    serie1.name = el1["nombreMunicipio"] + " - " + el1["sitio_sitioAbastecimiento"];
                                     var data = new Data { name = Convert.ToString(el1["fechaunix"]), y = Convert.ToDouble(el1["toneladas"]) };
                                     serie1.data.Add(data);
 
