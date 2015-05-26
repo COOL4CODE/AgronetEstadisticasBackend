@@ -849,7 +849,9 @@ SELECT codigoGrupo_GruposIPP, descripcionGrupo_GruposIPP from Indicadores_Grupos
                     break;
                 case "grafico":
                     DataTable results = adapter.GetDatatable(String.Format(@"USE [AgronetIndicadores];
-                                                                            select  DATEDIFF(ss, '01/01/1970', [fecha_IndicadoresDiarios]) as fechaunix, [fecha_IndicadoresDiarios], [nombre_TipoIndDiarios], [valorDTF_IndicadoresDiarios]
+                                                                            select [fecha_IndicadoresDiarios],
+                                                                            [nombre_TipoIndDiarios],
+                                                                            ISNULL([valorDTF_IndicadoresDiarios], 0) as valorDTF_IndicadoresDiarios
                                                                             from dbo.Indicadores_TipoIndicadoresDiarios
                                                                             inner join dbo.Indicadores_IndicadoresDiarios on dbo.Indicadores_TipoIndicadoresDiarios.codigoTipoInd_TipoIndDiarios = 
                                                                             dbo.Indicadores_IndicadoresDiarios.codigoTipoInd_IndicadoresDiarios
@@ -867,7 +869,7 @@ SELECT codigoGrupo_GruposIPP, descripcionGrupo_GruposIPP from Indicadores_Grupos
                             foreach (var d in (from r in results.AsEnumerable()
                                                select r))
                             {
-                                var data = new Data { name = Convert.ToString(d["fechaunix"]), y = Convert.ToDouble(d["valorDTF_IndicadoresDiarios"]) };
+                                var data = new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(d["fecha_IndicadoresDiarios"]))), y = Convert.ToDouble(d["valorDTF_IndicadoresDiarios"]) };
                                 serie.data.Add(data);
 
                             }

@@ -179,6 +179,5 @@ C:\Users\SQLBI_Agronet\Documents\Visual Studio 2013\Projects\AgronetEstadisticas
 C:\Users\SQLBI_Agronet\Documents\Visual Studio 2013\Projects\AgronetEstadisticasBackend\AgronetEstadisticas\bin\fr\Npgsql.resources.dll
 C:\Users\SQLBI_Agronet\Documents\Visual Studio 2013\Projects\AgronetEstadisticasBackend\AgronetEstadisticas\bin\ja\Npgsql.resources.dll
 C:\Users\SQLBI_Agronet\Documents\Visual Studio 2013\Projects\AgronetEstadisticasBackend\AgronetEstadisticas\bin\zh-CN\Npgsql.resources.dll
-C:\Users\SQLBI_Agronet\Documents\Visual Studio 2013\Projects\AgronetEstadisticasBackend\AgronetEstadisticas\obj\Debug\AgronetEstadisticas.csprojResolveAssemblyReference.cache
 C:\Users\SQLBI_Agronet\Documents\Visual Studio 2013\Projects\AgronetEstadisticasBackend\AgronetEstadisticas\obj\Debug\AgronetEstadisticas.dll
 C:\Users\SQLBI_Agronet\Documents\Visual Studio 2013\Projects\AgronetEstadisticasBackend\AgronetEstadisticas\obj\Debug\AgronetEstadisticas.pdb

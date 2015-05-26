@@ -72,14 +72,14 @@ namespace AgronetEstadisticas.Controllers
                             var serie1 = new Series { name = "Precio Pago Industrial", data = new List<Data>() };
                             var serie2 = new Series { name = "Valor Compensación", data = new List<Data>() };
                             var serie3 = new Series { name = "Precio Mínimo Garantía", data = new List<Data>() };
-                            foreach (var anioData in adapter.GetDatatable(String.Format(@"SELECT DATEDIFF(ss, '01/01/1970', [fecha]) as fechaunix, [fecha], [region], [precioPagIndustrial_PreciosPagInd], [ValorCompensacion_ValorCompensacion], [precioMinGarantia_precioMinGarantia]
+                            foreach (var anioData in adapter.GetDatatable(String.Format(@"SELECT [fecha], [region], [precioPagIndustrial_PreciosPagInd], ISNULL([ValorCompensacion_ValorCompensacion], 0.00) as ValorCompensacion_ValorCompensacion, [precioMinGarantia_precioMinGarantia]
                                             FROM [AgronetProyecciones].[dbo].[Algodon_Valores]
                                             WHERE [fecha] BETWEEN '{0}' AND '{1}' AND [region] = '{2}'
                                             ORDER BY [fecha], [region];", parameters.anio_inicial, parameters.anio_final, parameters.region)).AsEnumerable())
                             {
-                                serie1.data.Add(new Data { name = Convert.ToString(anioData["fechaunix"]), y = Convert.ToDouble(anioData["precioPagIndustrial_PreciosPagInd"]) });
-                                serie2.data.Add(new Data { name = Convert.ToString(anioData["fechaunix"]), y = Convert.ToDouble(anioData["ValorCompensacion_ValorCompensacion"]) });
-                                serie3.data.Add(new Data { name = Convert.ToString(anioData["fechaunix"]), y = Convert.ToDouble(anioData["precioMinGarantia_precioMinGarantia"]) });
+                                serie1.data.Add(new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(anioData["fecha"]))), y = Convert.ToDouble(anioData["precioPagIndustrial_PreciosPagInd"]) });
+                                serie2.data.Add(new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(anioData["fecha"]))), y = Convert.ToDouble(anioData["ValorCompensacion_ValorCompensacion"]) });
+                                serie3.data.Add(new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(anioData["fecha"]))), y = Convert.ToDouble(anioData["precioMinGarantia_precioMinGarantia"]) });
                             }
                             chart.series.Add(serie1);
                             chart.series.Add(serie2);
