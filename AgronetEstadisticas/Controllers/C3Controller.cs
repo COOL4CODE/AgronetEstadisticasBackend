@@ -64,10 +64,9 @@ namespace AgronetEstadisticas.Controllers
                                             calidadRegional.codigoVariableCalidad_CalidadRegional
                                             FROM (AgronetCadenas.compraLeche.calidadRegional calidadRegional INNER JOIN AgronetCadenas.Leche.region region ON calidadRegional.codigoRegion_CalidadRegional = region.codigo_Region)
                                             INNER JOIN AgronetCadenas.Leche.variableCalidad variableCalidad ON calidadRegional.codigoVariableCalidad_CalidadRegional=variableCalidad.codigo_VariableCalidad
-                                            WHERE calidadRegional.fecha_CalidadRegional BETWEEN '{0}' AND '{1}'
-                                            ORDER BY  variableCalidad.descripcion_VariableCalidad, 
-                                            region.descripcion_Region,
-                                            calidadRegional.fecha_CalidadRegional DESC", parameters.anio_inicial, parameters.anio_final);
+                                            WHERE calidadRegional.fecha_CalidadRegional BETWEEN '{0}-01-01' AND '{1}-12-31'
+                                            ORDER BY calidadRegional.fecha_CalidadRegional, variableCalidad.descripcion_VariableCalidad, 
+                                            region.descripcion_Region DESC", parameters.anio_inicial, parameters.anio_final);
 
                     DataTable results = adapter.GetDatatable(sql);
 
@@ -116,10 +115,9 @@ namespace AgronetEstadisticas.Controllers
                                             calidadRegional.codigoVariableCalidad_CalidadRegional
                                             FROM (AgronetCadenas.compraLeche.calidadRegional calidadRegional INNER JOIN AgronetCadenas.Leche.region region ON calidadRegional.codigoRegion_CalidadRegional = region.codigo_Region)
                                             INNER JOIN AgronetCadenas.Leche.variableCalidad variableCalidad ON calidadRegional.codigoVariableCalidad_CalidadRegional=variableCalidad.codigo_VariableCalidad
-                                            WHERE calidadRegional.fecha_CalidadRegional BETWEEN '{0}' AND '{1}'
-                                            ORDER BY  variableCalidad.descripcion_VariableCalidad, 
-                                            region.descripcion_Region,
-                                            calidadRegional.fecha_CalidadRegional DESC", parameters.anio_inicial, parameters.anio_final);
+                                            WHERE calidadRegional.fecha_CalidadRegional BETWEEN '{0}-01-01' AND '{1}-12-31'
+                                            ORDER BY  calidadRegional.fecha_CalidadRegional, variableCalidad.descripcion_VariableCalidad, 
+                                            region.descripcion_Region DESC", parameters.anio_inicial, parameters.anio_final);
 
                     DataTable tableResults = adapter.GetDatatable(sqlTable);
                     Table table = new Table { rows = tableResults};
@@ -181,7 +179,7 @@ namespace AgronetEstadisticas.Controllers
                                                         )
                                                         insert into #SP_PRECIOS_LECHE_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_REGION]
 		                                                        @Fecha_inicial = N'{0}-01-01',
-		                                                        @Fecha_final = N'{1}-01-01'
+		                                                        @Fecha_final = N'{1}-12-31'
 
                                                         SELECT 
 	                                                        region.descripcion_Region, 
@@ -192,7 +190,7 @@ namespace AgronetEstadisticas.Controllers
 	                                                        ISNULL(#SP_PRECIOS_LECHE_REGION.variacionVolumen,0) as variacionVolumen
                                                          FROM   AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_REGION 
                                                          ON #SP_PRECIOS_LECHE_REGION.codigoRegion = region.codigo_Region
-                                                         WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}-01-01' and '{3}-01-01'
+                                                         WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}-01-01' and '{3}-12-31'
 
                                                         DROP TABLE #SP_PRECIOS_LECHE_REGION",
                                                         parameters.fecha_inicial,parameters.fecha_final,
@@ -258,7 +256,7 @@ namespace AgronetEstadisticas.Controllers
                                                         )
                                                         insert into #SP_PRECIOS_LECHE_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_REGION]
 		                                                        @Fecha_inicial = N'{0}-01-01',
-		                                                        @Fecha_final = N'{1}-01-01'
+		                                                        @Fecha_final = N'{1}-12-31'
 
                                                         SELECT 
 	                                                        region.descripcion_Region, 
@@ -269,7 +267,7 @@ namespace AgronetEstadisticas.Controllers
 	                                                        ISNULL(#SP_PRECIOS_LECHE_REGION.variacionVolumen,0) as variacionVolumen
                                                          FROM   AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_REGION 
                                                          ON #SP_PRECIOS_LECHE_REGION.codigoRegion = region.codigo_Region
-                                                         WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}-01-01' and '{3}-01-01'
+                                                         WHERE #SP_PRECIOS_LECHE_REGION.fecha between '{2}-01-01' and '{3}-12-31'
 
                                                         DROP TABLE #SP_PRECIOS_LECHE_REGION",
                                                         parameters.fecha_inicial,parameters.fecha_final,
@@ -537,7 +535,7 @@ namespace AgronetEstadisticas.Controllers
 	                                        ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
                                          INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
 	                                        ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
 
                                         DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
 
@@ -597,7 +595,7 @@ namespace AgronetEstadisticas.Controllers
 	                                        ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
                                          INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
 	                                        ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
                                         and regionDepartamento.descripcionDepartamento_RegionDepartamento = '" + parameters.departamento + @"'
                                         DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
                             DataTable datatable = adapter.GetDatatable(sqlTable);
@@ -692,7 +690,7 @@ namespace AgronetEstadisticas.Controllers
                                          FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
                                          ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
                                          INNER JOIN  AgronetCadenas.ventaLeche.producto producto ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
                                          and regionDepartamento.descripcionDepartamento_RegionDepartamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") 
                                          and producto.descripcion_Producto = '" + parameters.tipo_producto + @"'
 
@@ -741,7 +739,7 @@ namespace AgronetEstadisticas.Controllers
                                          FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
                                          ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
                                          INNER JOIN  AgronetCadenas.ventaLeche.producto producto ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
                                          and regionDepartamento.descripcionDepartamento_RegionDepartamento  IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") 
                                          and producto.descripcion_Producto = '" + parameters.tipo_producto + @"'
 
@@ -827,7 +825,7 @@ namespace AgronetEstadisticas.Controllers
                                          FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
                                          ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
                                          INNER JOIN  AgronetCadenas.ventaLeche.producto producto ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
                                          and regionDepartamento.descripcionDepartamento_RegionDepartamento  IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") 
                                          and producto.descripcion_Producto = '" + parameters.tipo_producto + @"'
 
@@ -927,7 +925,7 @@ HAVING      (consumidor.producto.descripcion_Producto LIKE N'leche%')";
 FROM   (AgronetCadenas.consumidor.PreciosConsumidor PreciosConsumidor
  INNER JOIN AgronetCadenas.Leche.Divipola Divipola ON PreciosConsumidor.codigoCiudad_PreciosConsumidor=Divipola.codigoMunicipio) 
  INNER JOIN AgronetCadenas.consumidor.producto producto ON PreciosConsumidor.codigoProducto_PreciosConsumidor=producto.codigo_Producto
-WHERE PreciosConsumidor.fecha_PreciosConsumidor BETWEEN '{0}' AND '{1}'
+WHERE PreciosConsumidor.fecha_PreciosConsumidor BETWEEN '{0}-01-01' AND '{1}-12-31'
 AND  PreciosConsumidor.codigoProducto_PreciosConsumidor = {2}
 AND PreciosConsumidor.codigoCiudad_PreciosConsumidor IN (" + string.Join(",", parameters.ciudad.Select(d => "'" + d + "'")) + @")
 ORDER BY Divipola.nombreMunicipio, PreciosConsumidor.fecha_PreciosConsumidor", parameters.fecha_inicial, parameters.fecha_final, parameters.producto)); 
@@ -959,7 +957,7 @@ ORDER BY Divipola.nombreMunicipio, PreciosConsumidor.fecha_PreciosConsumidor", p
 FROM   (AgronetCadenas.consumidor.PreciosConsumidor PreciosConsumidor
  INNER JOIN AgronetCadenas.Leche.Divipola Divipola ON PreciosConsumidor.codigoCiudad_PreciosConsumidor=Divipola.codigoMunicipio) 
  INNER JOIN AgronetCadenas.consumidor.producto producto ON PreciosConsumidor.codigoProducto_PreciosConsumidor=producto.codigo_Producto
-WHERE PreciosConsumidor.fecha_PreciosConsumidor BETWEEN '{0}' AND '{1}'
+WHERE PreciosConsumidor.fecha_PreciosConsumidor BETWEEN '{0}-01-01' AND '{1}-12-31'
 AND  PreciosConsumidor.codigoProducto_PreciosConsumidor = {2}
 AND PreciosConsumidor.codigoCiudad_PreciosConsumidor IN (" + string.Join(",", parameters.ciudad.Select(d => "'" + d + "'")) + @")
 ORDER BY Divipola.nombreMunicipio, PreciosConsumidor.fecha_PreciosConsumidor", parameters.fecha_inicial, parameters.fecha_final, parameters.producto)); 
@@ -1184,7 +1182,7 @@ GROUP BY compraLeche.precioDepartamental.codigoDepartamento_PrecioDepartamental,
 )
 insert into #SP_PRECIOS_LECHE_GANADERO_REGION EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_LECHE_GANADERO_REGION]
 		@Fecha_inicial = N'"+parameters.fecha_inicial+@"-01-01',
-		@Fecha_final = N'"+parameters.fecha_final+@"-01-01'
+		@Fecha_final = N'"+parameters.fecha_final+@"-12-31'
 
 SELECT region.descripcion_Region as region,
 	#SP_PRECIOS_LECHE_GANADERO_REGION.fecha as fecha,
@@ -1193,7 +1191,7 @@ SELECT region.descripcion_Region as region,
 	ISNULL(#SP_PRECIOS_LECHE_GANADERO_REGION.variacionVolumen,0) as variacionVolumen
  FROM AgronetCadenas.Leche.region region INNER JOIN #SP_PRECIOS_LECHE_GANADERO_REGION 
  ON #SP_PRECIOS_LECHE_GANADERO_REGION.codigoRegion = region.codigo_Region
- WHERE #SP_PRECIOS_LECHE_GANADERO_REGION.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-01-01'
+ WHERE #SP_PRECIOS_LECHE_GANADERO_REGION.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
 
 DROP TABLE #SP_PRECIOS_LECHE_GANADERO_REGION";
 
