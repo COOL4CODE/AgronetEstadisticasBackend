@@ -149,11 +149,8 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            string sql = @"SELECT DISTINCT
-                                YEAR(calidadRegional.fecha_CalidadRegional) as anios
-                                FROM   
-                                AgronetCadenas.compraLeche.calidadRegional calidadRegional
-                                ORDER BY YEAR(calidadRegional.fecha_CalidadRegional)";
+                            string sql = @"SELECT DISTINCT YEAR(fecha_PrecioRegional) anios FROM AgronetCadenas.compraLeche.precioRegional
+ORDER BY YEAR(fecha_PrecioRegional)";
 
                             DataTable data = adapter.GetDatatable(sql);
                             Parameter param = new Parameter { name = "anios" , data = new List<ParameterData>() };
@@ -309,11 +306,8 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            string sql = @"SELECT DISTINCT
-                                YEAR(calidadRegional.fecha_CalidadRegional) as anios
-                                FROM   
-                                AgronetCadenas.compraLeche.calidadRegional calidadRegional
-                                ORDER BY YEAR(calidadRegional.fecha_CalidadRegional)";
+                            string sql = @"SELECT DISTINCT YEAR(fecha_PrecioRegional) anios FROM AgronetCadenas.compraLeche.precioRegional
+ORDER BY YEAR(fecha_PrecioRegional)";
 
                             DataTable data = adapter.GetDatatable(sql);
                             Parameter param = new Parameter { name = "anios" , data = new List<ParameterData>() };

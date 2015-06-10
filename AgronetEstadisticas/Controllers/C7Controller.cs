@@ -378,6 +378,9 @@ namespace AgronetEstadisticas.Controllers
                                                                                 INNER JOIN AgronetPesca.dbo.Volumen_TipoPesca ON AgronetPesca.dbo.Volumen_TipoPesca.Codigo_TipoPesca = #SP_VOLUMENPESCA_MUNICIPIO.codigoTipoPesca
                                                                                 where #SP_VOLUMENPESCA_MUNICIPIO.codigoProducto IN (" + string.Join(",", parameters.especie.Select(d => "'" + d + "'")) + @")
                                                                                 AND #SP_VOLUMENPESCA_MUNICIPIO.codigoTipoPesca = {3}
+                                                                                ORDER BY #SP_VOLUMENPESCA_MUNICIPIO.fecha,
+                                                                            AgronetPesca.dbo.Divipola_5Digitos.nombreMunicipio,
+                                                                            AgronetPesca.dbo.Volumen_Productos.nombreComun_Producto
                                                                                 DROP TABLE #SP_VOLUMENPESCA_MUNICIPIO;", parameters.fecha_inicial, parameters.fecha_final, parameters.municipio, parameters.tipo_pesca));
 
                     switch (parameters.id)
