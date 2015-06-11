@@ -504,39 +504,16 @@ ORDER BY YEAR(fecha_PrecioRegional)";
                             returnData = (Parameter)param;
                             break;
                         case 2:
-                            string sqlp2 = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
-	                                        fecha date,
-	                                        codigoDepartamento int,
-	                                        codigoProducto int,
-	                                        codigoTipoProducto int,
-	                                        producto text,
-	                                        unidadPrecio text,
-	                                        precio int,
-	                                        volumen int,
-	                                        unidadVolumen text,
-	                                        variacionPrecio float,
-	                                        variacionVolumen float
-                                        )
-                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
-		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
-		                                        @Fecha_final = N'" + parameters.fecha_final+ @"-01-01'
-
-                                        SELECT 
-	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento
-                                         FROM   
-                                         AgronetCadenas.Leche.regionDepartamento regionDepartamento 
-                                         INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
-	                                        ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
-                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
-	                                        ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
-
-                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
+                            string sqlp2 = @"SELECT TOP (100) PERCENT AgronetCadenas.ventaLeche.PrecioDepartamental.codigoDepartamento_PrecioDepartamental, AgronetCadenas.dbo.Departamentos.nombreDepartamento
+FROM AgronetCadenas.dbo.Departamentos INNER JOIN AgronetCadenas.ventaLeche.PrecioDepartamental
+ON  AgronetCadenas.dbo.Departamentos.codigoDepartamento = AgronetCadenas.ventaLeche.PrecioDepartamental.codigoDepartamento_PrecioDepartamental 
+GROUP BY AgronetCadenas.dbo.Departamentos.nombreDepartamento, AgronetCadenas.ventaLeche.PrecioDepartamental.codigoDepartamento_PrecioDepartamental 
+ORDER BY AgronetCadenas.dbo.Departamentos.nombreDepartamento";
 
                              DataTable datap2 = adapter.GetDatatable(sqlp2);
                             Parameter paramp2 = new Parameter { name = "departamentos" , data = new List<ParameterData>() };
-                            foreach (var d in (from p in datap2.AsEnumerable() select p[@"departamento"])){
-                                ParameterData parameter = new ParameterData { name = Convert.ToString(d), value = Convert.ToString(d) };
+                            foreach (var d in datap2.AsEnumerable()){
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombreDepartamento"]), value = Convert.ToString(d["codigoDepartamento_PrecioDepartamental"]) };
                                 paramp2.data.Add(parameter);
                             }
 
@@ -556,43 +533,43 @@ ORDER BY YEAR(fecha_PrecioRegional)";
                     switch (parameters.id)
                     {
                         case 1:
+                            DataTable datatable = adapter.GetDatatable(String.Format(@"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
+	                                                                                    fecha date,
+	                                                                                    codigoDepartamento int,
+	                                                                                    codigoProducto int,
+	                                                                                    codigoTipoProducto int,
+	                                                                                    producto text,
+	                                                                                    precio float,
+	                                                                                    unidadPrecio text,
+	                                                                                    volumen float,
+	                                                                                    unidadVolumen text,
+	                                                                                    variacionPrecio float,
+	                                                                                    variacionVolumen float
+                                                                                    )
+                                                                                    insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
+		                                                                                    @Fecha_inicial = N'{0}-01-01',
+		                                                                                    @Fecha_final = N'{1}-12-31'
 
-                            string sqlTable = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
-	                                        fecha date,
-	                                        codigoDepartamento int,
-	                                        codigoProducto int,
-	                                        codigoTipoProducto int,
-	                                        producto text,
-	                                        unidadPrecio text,
-	                                        precio int,
-	                                        volumen int,
-	                                        unidadVolumen text,
-	                                        variacionPrecio float,
-	                                        variacionVolumen float
-                                        )
-                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
-		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
-		                                        @Fecha_final = N'" + parameters.fecha_final + @"-01-01'
-
-                                        SELECT 
-	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento, 
-	                                        regionDepartamento.codigoDepartamento_RegionDepartamento,
-	                                        producto.descripcion_Producto,
-	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
-	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
-	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
-	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
-	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
-                                         FROM   
-                                         AgronetCadenas.Leche.regionDepartamento regionDepartamento 
-                                         INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
-	                                        ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
-                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
-	                                        ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
-                                        and regionDepartamento.descripcionDepartamento_RegionDepartamento = '" + parameters.departamento + @"'
-                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
-                            DataTable datatable = adapter.GetDatatable(sqlTable);
+                                                                                     SELECT 
+	                                                                                    regionDepartamento.nombreDepartamento, 
+	                                                                                    producto.descripcion_Producto,
+	                                                                                    productoTipo.descripcion_productoTipo,
+	                                                                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
+	                                                                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
+	                                                                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
+	                                                                                    ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                                                                    ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                                                                        FROM   
+                                                                                        AgronetCadenas.dbo.Departamentos regionDepartamento 
+                                                                                        INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+	                                                                                    ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento
+                                                                                        INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
+	                                                                                    ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+	                                                                                    INNER JOIN AgronetCadenas.ventaLeche.productoTipo productoTipo
+	                                                                                    ON producto.codigo_Producto = productoTipo.codigoProducto_productoTipo
+                                                                                        WHERE regionDepartamento.codigoDepartamento = {2}
+	                                                                                    ORDER BY producto.descripcion_Producto, productoTipo.descripcion_productoTipo, #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha
+                                                                                    DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO", parameters.fecha_inicial, parameters.fecha_final, parameters.departamento));
                             Table table = new Table { rows = datatable };
                             returnData = (Table)table;
 
