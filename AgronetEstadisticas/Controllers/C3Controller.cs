@@ -550,25 +550,24 @@ ORDER BY AgronetCadenas.dbo.Departamentos.nombreDepartamento";
 		                                                                                    @Fecha_inicial = N'{0}-01-01',
 		                                                                                    @Fecha_final = N'{1}-12-31'
 
-                                                                                     SELECT 
-	                                                                                    regionDepartamento.nombreDepartamento, 
-	                                                                                    producto.descripcion_Producto,
-	                                                                                    productoTipo.descripcion_productoTipo,
-	                                                                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
-	                                                                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
-	                                                                                    #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
-	                                                                                    ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
-	                                                                                    ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
-                                                                                        FROM   
-                                                                                        AgronetCadenas.dbo.Departamentos regionDepartamento 
-                                                                                        INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
-	                                                                                    ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento
-                                                                                        INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
-	                                                                                    ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-	                                                                                    INNER JOIN AgronetCadenas.ventaLeche.productoTipo productoTipo
-	                                                                                    ON producto.codigo_Producto = productoTipo.codigoProducto_productoTipo
-                                                                                        WHERE regionDepartamento.codigoDepartamento = {2}
-	                                                                                    ORDER BY producto.descripcion_Producto, productoTipo.descripcion_productoTipo, #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha
+                                                                                    SELECT 
+	                                                                                regionDepartamento.nombreDepartamento, 
+	                                                                                producto.descripcion_Producto,
+	                                                                                #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.producto,
+	                                                                                #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
+	                                                                                #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
+	                                                                                #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
+	                                                                                #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.unidadPrecio,
+	                                                                                #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.unidadVolumen,
+	                                                                                ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                                                                ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                                                                    FROM AgronetCadenas.dbo.Departamentos regionDepartamento 
+                                                                                    INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
+	                                                                                ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento
+                                                                                    INNER JOIN  AgronetCadenas.ventaLeche.producto producto 
+	                                                                                ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
+                                                                                    WHERE regionDepartamento.codigoDepartamento = {2}
+	                                                                                ORDER BY producto.descripcion_Producto, #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoTipoProducto, #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha
                                                                                     DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO", parameters.fecha_inicial, parameters.fecha_final, parameters.departamento));
                             Table table = new Table { rows = datatable };
                             returnData = (Table)table;
@@ -660,19 +659,24 @@ ORDER BY AgronetCadenas.dbo.Departamentos.nombreDepartamento";
 		                                                                            @Fecha_inicial = N'{0}-01-01',
 		                                                                            @Fecha_final = N'{1}-12-31'
 
-                                                                            SELECT regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento,
+                                                                            SELECT regionDepartamento.descripcionDepartamento_RegionDepartamento,
 	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.producto,
 	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
 	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
-	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen                                                                            FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento
+	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.unidadPrecio,
+	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
+	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.unidadVolumen,
+                                                                                ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
+	                                                                            ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
+                                                                            FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento
                                                                             INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
-                                                                            WHERE regionDepartamento.codigoDepartamento_RegionDepartamento IN (" + string.Join(",", parameters.departamento.Select(d => d)) + @")
+                                                                            WHERE regionDepartamento.codigoDepartamento_RegionDepartamento IN  (" + string.Join(",", parameters.departamento.Select(d => d)) + @")
                                                                             AND #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoTipoProducto = {2}
-                                                                            ORDER BY #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha, regionDepartamento.descripcionDepartamento_RegionDepartamento
+                                                                            ORDER BY regionDepartamento.descripcionDepartamento_RegionDepartamento, #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha
 
                                                                             DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO", parameters.fecha_inicial, parameters.fecha_final, parameters.tipo_producto));
                     var dataGroups = from r in datatable.AsEnumerable()
-                                    group r by r["departamento"] into seriesGroup
+                                     group r by r["descripcionDepartamento_RegionDepartamento"] into seriesGroup
                                     select seriesGroup;
 
 
@@ -686,10 +690,7 @@ ORDER BY AgronetCadenas.dbo.Departamentos.nombreDepartamento";
                                 var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
 
                                 foreach(var seriesData in dataGroup){
-                                    var name = Convert.ToDateTime(seriesData["fecha"]);
-                                    var y = Convert.ToDouble(seriesData["precio"]);
-                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
-                                    serie.data.Add(data);
+                                    serie.data.Add(new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(seriesData["fecha"]))), y = Convert.ToDouble(seriesData["precio"]) });
                                 }
                                 chart1.series.Add(serie);
                             }
@@ -705,10 +706,7 @@ ORDER BY AgronetCadenas.dbo.Departamentos.nombreDepartamento";
                                 var serie = new Series { name = dataGroup.Key.ToString(), data = new List<Data>() };
 
                                 foreach(var seriesData in dataGroup){
-                                    var name = Convert.ToDateTime(seriesData["fecha"]);
-                                    var y = Convert.ToDouble(seriesData["volumen"]);
-                                    var data = new Data { name = String.Format("{0:y}", name), y = y };
-                                    serie.data.Add(data);
+                                    serie.data.Add(new Data { name = Convert.ToString(ToUnixTimestamp(Convert.ToDateTime(seriesData["fecha"]))), y = Convert.ToDouble(seriesData["volumen"]) });
                                 }
                                 chart2.series.Add(serie);
                             }
@@ -720,42 +718,7 @@ ORDER BY AgronetCadenas.dbo.Departamentos.nombreDepartamento";
                     }
                     break;
                 case "tabla":
-
-                    String sqlTable = @"create table  #SP_PRECIOS_VENTALECHE_DEPARTAMENTO(
-	                                        fecha date,
-	                                        codigoDepartamento int,
-	                                        codigoProducto int,
-	                                        codigoTipoProducto int,
-	                                        producto text,
-	                                        unidadPrecio text,
-	                                        precio int,
-	                                        volumen int,
-	                                        unidadVolumen text,
-	                                        variacionPrecio float,
-	                                        variacionVolumen float
-                                        )
-                                        insert into #SP_PRECIOS_VENTALECHE_DEPARTAMENTO EXEC [AgronetCadenas].[dbo].[SP_PRECIOS_VENTALECHE_DEPARTAMENTO]
-		                                        @Fecha_inicial = N'" + parameters.fecha_inicial + @"-01-01',
-		                                        @Fecha_final = N'" + parameters.fecha_final + @"-01-01'
-
-                                        SELECT 
-	                                        regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento, 
-	                                        regionDepartamento.codigoDepartamento_RegionDepartamento as codigoDepartamento,
-	                                        producto.descripcion_Producto as producto,
-	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha as fecha,
-	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio as precio,
-	                                        #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen as volumen,
-	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
-	                                        ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
-                                         FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO 
-                                         ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
-                                         INNER JOIN  AgronetCadenas.ventaLeche.producto producto ON producto.codigo_Producto = #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoProducto
-                                         WHERE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha between '" + parameters.fecha_inicial + @"-01-01' and '" + parameters.fecha_final + @"-12-31'
-                                         and regionDepartamento.descripcionDepartamento_RegionDepartamento  IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") 
-                                         and producto.descripcion_Producto = '" + parameters.tipo_producto + @"'
-
-                                        DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO";
-
+                    
                     switch (parameters.id)
                     {
                         case 1:
@@ -777,20 +740,20 @@ ORDER BY AgronetCadenas.dbo.Departamentos.nombreDepartamento";
 		                                                                            @Fecha_inicial = N'{0}-01-01',
 		                                                                            @Fecha_final = N'{1}-12-31'
 
-                                                                            SELECT regionDepartamento.descripcionDepartamento_RegionDepartamento as departamento,
+                                                                             SELECT regionDepartamento.descripcionDepartamento_RegionDepartamento,
 	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.producto,
 	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha,
 	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.precio,
-	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,    
+	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.unidadPrecio,
+	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.volumen,
+	                                                                            #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.unidadVolumen,
                                                                                 ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionPrecio,0) as variacionPrecio,
-	                                                                            ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen,
-                                                                                #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.unidadVolumen,
-                                                                                #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.unidadPrecio
+	                                                                            ISNULL(#SP_PRECIOS_VENTALECHE_DEPARTAMENTO.variacionVolumen,0) as variacionVolumen
                                                                             FROM   AgronetCadenas.Leche.regionDepartamento regionDepartamento
                                                                             INNER JOIN #SP_PRECIOS_VENTALECHE_DEPARTAMENTO ON #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoDepartamento = regionDepartamento.codigoDepartamento_RegionDepartamento
-                                                                            WHERE regionDepartamento.codigoDepartamento_RegionDepartamento IN (" + string.Join(",", parameters.departamento.Select(d => d)) + @")
+                                                                            WHERE regionDepartamento.codigoDepartamento_RegionDepartamento IN  (" + string.Join(",", parameters.departamento.Select(d => d)) + @")
                                                                             AND #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.codigoTipoProducto = {2}
-                                                                            ORDER BY #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha, regionDepartamento.descripcionDepartamento_RegionDepartamento
+                                                                            ORDER BY regionDepartamento.descripcionDepartamento_RegionDepartamento, #SP_PRECIOS_VENTALECHE_DEPARTAMENTO.fecha
 
                                                                             DROP TABLE #SP_PRECIOS_VENTALECHE_DEPARTAMENTO", parameters.fecha_inicial, parameters.fecha_final, parameters.tipo_producto));
                             Table table = new Table { rows = datatable2 };
@@ -1238,5 +1201,12 @@ DROP TABLE #SP_PRECIOS_LECHE_GANADERO_REGION";
             return Ok(returnData);
         }
 
+        private long ToUnixTimestamp(DateTime target)
+        {
+            var date = new DateTime(1970, 1, 1, 0, 0, 0, target.Kind);
+            var unixTimestamp = System.Convert.ToInt64((target - date).TotalSeconds);
+
+            return unixTimestamp;
+        }
     }
 }

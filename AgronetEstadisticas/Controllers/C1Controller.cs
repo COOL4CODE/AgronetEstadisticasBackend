@@ -139,8 +139,9 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                         foreach (var d1 in (from d in result.AsEnumerable()
                                             select d))
                         {
-                            Data data1 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["produccion_eva"]) };
-                            Data data2 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["area_eva"]) };
+                            DateTime dateValue = new DateTime(Convert.ToInt32(d1["anho_eva"]), 1, 1);
+                            Data data1 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["produccion_eva"]) };
+                            Data data2 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["area_eva"]) };
 
                             serie1.data.Add(data1);
                             serie2.data.Add(data2);
@@ -157,7 +158,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                         foreach (var d1 in (from d in result.AsEnumerable()
                                             select d))
                         {
-                            Data data1 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["rendimiento"]) };
+                            DateTime dateValue = new DateTime(Convert.ToInt32(d1["anho_eva"]), 1, 1);
+                            Data data1 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["rendimiento"]) };
                             serie3.data.Add(data1);
                         }
 
@@ -175,8 +177,9 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                         foreach (var d1 in (from d in result.AsEnumerable()
                                             select d))
                         {
-                            Data data1 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["participacion_produccion_nacional"]) };
-                            Data data2 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["participacion_area_nacional"]) };
+                            DateTime dateValue = new DateTime(Convert.ToInt32(d1["anho_eva"]), 1, 1);
+                            Data data1 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["participacion_produccion_nacional"]) };
+                            Data data2 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["participacion_area_nacional"]) };
 
                             serie4.data.Add(data1);
                             serie5.data.Add(data2);
@@ -331,8 +334,9 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                             foreach (var d1 in (from d in results.AsEnumerable()
                                                 select d))
                             {
-                                Data data1 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["produccion_eva"]) };
-                                Data data2 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["area_eva"]) };
+                                DateTime dateValue = new DateTime(Convert.ToInt32(d1["anho_eva"]), 1, 1);
+                                Data data1 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["produccion_eva"]) };
+                                Data data2 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["area_eva"]) };
 
                                 serie1.data.Add(data1);
                                 serie2.data.Add(data2);
@@ -351,7 +355,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                             foreach (var d1 in (from d in results.AsEnumerable()
                                                 select d))
                             {
-                                Data data1 = new Data { name = Convert.ToString(d1["anho_eva"]), y = Convert.ToDouble(d1["rendimiento"]) };
+                                DateTime dateValue = new DateTime(Convert.ToInt32(d1["anho_eva"]), 1, 1);
+                                Data data1 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["rendimiento"]) };
 
 
                                 serie3.data.Add(data1);
@@ -567,7 +572,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie1 = new Series { name = deptosGroup.Key.ToString(), data = new List<Data>() };
                                 foreach (var el1 in deptosGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(el1["anho_eva"]), y = Convert.ToDouble(el1["produccion_eva"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(el1["anho_eva"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(el1["produccion_eva"]) };
                                     serie1.data.Add(data);
 
                                 }
@@ -588,7 +594,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie1 = new Series { name = deptosGroup.Key.ToString(), data = new List<Data>() };
                                 foreach (var el1 in deptosGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(el1["anho_eva"]), y = Convert.ToDouble(el1["area_eva"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(el1["anho_eva"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(el1["area_eva"]) };
                                     serie1.data.Add(data);
 
                                 }
@@ -608,7 +615,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie1 = new Series { name = deptosGroup.Key.ToString(), data = new List<Data>() };
                                 foreach (var el1 in deptosGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(el1["anho_eva"]), y = Convert.ToDouble(el1["rendimiento"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(el1["anho_eva"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(el1["rendimiento"]) };
                                     serie1.data.Add(data);
 
                                 }
@@ -629,7 +637,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie1 = new Series { name = deptosGroup.Key.ToString(), data = new List<Data>() };
                                 foreach (var el1 in deptosGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(el1["anho_eva"]), y = Convert.ToDouble(el1["participacion_produccion_nacional"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(el1["anho_eva"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(el1["participacion_produccion_nacional"]) };
                                     serie1.data.Add(data);
 
                                 }
@@ -650,7 +659,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie1 = new Series { name = deptosGroup.Key.ToString(), data = new List<Data>() };
                                 foreach (var el1 in deptosGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(el1["anho_eva"]), y = Convert.ToDouble(el1["participacion_area_nacional"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(el1["anho_eva"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(el1["participacion_area_nacional"]) };
                                     serie1.data.Add(data);
 
                                 }
@@ -1160,8 +1170,9 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                             foreach (var d1 in (from d in results1.AsEnumerable()
                                                 select d))
                             {
-                                Data data1 = new Data { name = Convert.ToString(d1["anho"]), y = Convert.ToDouble(d1["total_machos_nal"]) };
-                                Data data2 = new Data { name = Convert.ToString(d1["anho"]), y = Convert.ToDouble(d1["total_hembras_nal"]) };
+                                DateTime dateValue = new DateTime(Convert.ToInt32(d1["anho"]), 1, 1);
+                                Data data1 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["total_machos_nal"]) };
+                                Data data2 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["total_hembras_nal"]) };
 
                                 serie1.data.Add(data1);
                                 serie2.data.Add(data2);
@@ -1208,7 +1219,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 foreach (var anioGroup in deptoGroup)
                                 {
                                     double y = anioGroup.Sum(d => Convert.ToDouble(d["total_machos_depto"]));
-                                    var data = new Data { name = Convert.ToString(anioGroup.Key.ToString()), y = y };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioGroup.Key.ToString()), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = y };
                                     serie.data.Add(data);
                                 }
                                 chart2.series.Add(serie);
@@ -1256,7 +1268,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 foreach (var anioGroup in deptoGroup)
                                 {
                                     double y = anioGroup.Sum(d => Convert.ToDouble(d["total_hembras_depto"]));
-                                    var data = new Data { name = Convert.ToString(anioGroup.Key.ToString()), y = y };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioGroup.Key.ToString()), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = y };
                                     serie.data.Add(data);
                                 }
                                 chart3.series.Add(serie);
@@ -1298,7 +1311,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 foreach (var anioGroup in orientacionGroup)
                                 {
                                     double y = anioGroup.Sum(d => Convert.ToDouble(d["total_animales"]));
-                                    var data = new Data { name = Convert.ToString(anioGroup.Key.ToString()), y = y };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioGroup.Key.ToString()), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = y };
                                     serie.data.Add(data);
                                 }
                                 chart4.series.Add(serie);
@@ -1482,7 +1496,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 foreach (var anioGroup in deptoGroup)
                                 {
                                     double y = anioGroup.Sum(d => Convert.ToDouble(d["produccion_pecuaria"]));
-                                    var data = new Data { name = Convert.ToString(anioGroup.Key.ToString()), y = y };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioGroup.Key.ToString()), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = y };
                                     serie.data.Add(data);
                                 }
                                 chart1.series.Add(serie);
@@ -1550,10 +1565,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                                 agromapas.base.v_departamento.codigodane departamentocod, 
                                                                                 agromapas.base.v_departamento.nombre departamento
                                                                                 FROM agromapas.base.v_departamento
-                                                                                INNER JOIN (SELECT DISTINCT substring(v_mun.codigodane from 1 for 2) codigodane
-                                                                                FROM agromapas.eva_mpal.v_evamunicipal v_evamun
-                                                                                INNER JOIN agromapas.base.v_municipio v_mun ON v_mun.codigo::VARCHAR = v_evamun.codigomunicipio_eva) eva_mun ON eva_mun.codigodane = agromapas.base.v_departamento.codigodane
-                                                                                ORDER BY agromapas.base.v_departamento.nombre ASC;").AsEnumerable()
+                                                                                ORDER BY agromapas.base.v_departamento.nombre ASC").AsEnumerable()
                                                select p))
                             {
                                 ParameterData param = new ParameterData { value = Convert.ToString(p["departamentocod"]), name = Convert.ToString(p["departamento"]).Trim() };
@@ -1563,13 +1575,9 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                             break;
                         case 2:
                             parameter.name = "municipio";
-                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT DISTINCT
-                                                                                v_mun.codigo municipiocod, 
-                                                                                v_mun.nombre municipio
-                                                                                FROM agromapas.eva_mpal.v_evamunicipal v_evamun
-                                                                                INNER JOIN agromapas.base.v_municipio v_mun ON v_mun.codigo::VARCHAR = v_evamun.codigomunicipio_eva
-                                                                                WHERE substring(v_mun.codigo::VARCHAR from 1 for 2) = '{0}'
-                                                                                ORDER BY v_mun.nombre;", parameters.departamento)).AsEnumerable()
+                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT v_mun.codigodane municipiocod, v_mun.nombre municipio FROM agromapas.base.v_municipio v_mun
+                                                                                            WHERE substring(v_mun.codigodane from 1 for 2) = '{0}'
+                                                                                            ORDER BY v_mun.nombre ASC;", parameters.departamento)).AsEnumerable()
                                                select p))
                             {
                                 ParameterData param = new ParameterData { value = Convert.ToString(p["municipiocod"]), name = Convert.ToString(p["municipio"]).Trim() };
@@ -1601,11 +1609,12 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                             SUM(v_evamun.rendimiento_eva) as rendimiento
                                                                             FROM agromapas.eva_mpal.v_evamunicipal v_evamun
                                                                             INNER JOIN agromapas.eva_mpal.v_productodetalle v_prod ON v_prod.codigoagronetproducto = v_evamun.codigoagronetproducto_eva
-                                                                            WHERE v_evamun.anho_eva >= {0} 
+                                                                            WHERE v_evamun.anho_eva >= {0}
                                                                             AND v_evamun.anho_eva <= {1}
-                                                                            AND v_evamun.codigomunicipio_eva = '{2}'
-                                                                            GROUP BY v_evamun.anho_eva, v_prod.nombrecomun
-                                                                            ORDER BY v_evamun.anho_eva, v_prod.nombrecomun;", parameters.anio_inicial, parameters.anio_final, parameters.municipio));
+                                                                            AND substring(v_evamun.codigomunicipio_eva::VARCHAR from 1 for 2) = '{2}'
+                                                                            AND v_evamun.codigomunicipio_eva = '{3}'
+                                                                            GROUP BY v_prod.nombrecomun, v_evamun.anho_eva
+                                                                            ORDER BY v_prod.nombrecomun, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.departamento, parameters.municipio));
 
                     Chart chart = new Chart { series = new List<Series>() };
                     switch (parameters.id)
@@ -1618,7 +1627,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
                                 foreach (var anioData in productGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(anioData["anio"]), y = Convert.ToDouble(anioData["area_sembrada"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["area_sembrada"]) };
                                     serie.data.Add(data);
 
                                 }
@@ -1635,7 +1645,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
                                 foreach (var anioData in productGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(anioData["anio"]), y = Convert.ToDouble(anioData["area_cosechada"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["area_cosechada"]) };
                                     serie.data.Add(data);
 
                                 }
@@ -1652,7 +1663,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
                                 foreach (var anioData in productGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(anioData["anio"]), y = Convert.ToDouble(anioData["produccion"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["produccion"]) };
                                     serie.data.Add(data);
 
                                 }
@@ -1669,7 +1681,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
                                 foreach (var anioData in productGroup)
                                 {
-                                    var data = new Data { name = Convert.ToString(anioData["anio"]), y = Convert.ToDouble(anioData["rendimiento"]) };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["rendimiento"]) };
                                     serie.data.Add(data);
 
                                 }
@@ -1715,6 +1728,14 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
             }
 
             return Ok(returnData);
+        }
+
+        private long ToUnixTimestamp(DateTime target)
+        {
+            var date = new DateTime(1970, 1, 1, 0, 0, 0, target.Kind);
+            var unixTimestamp = System.Convert.ToInt64((target - date).TotalSeconds);
+
+            return unixTimestamp;
         }
     }
 }
