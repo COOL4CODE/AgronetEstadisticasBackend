@@ -104,10 +104,13 @@ namespace AgronetEstadisticas.Controllers
                 mdxParams.Add(new MdxParameter("@anio", String.Format("[Periodo].[anho].&[{0}]:[Periodo].[anho].&[{1}]", parameters.anio_inicial, parameters.anio_final)));
                 mdxParams.Add(new MdxParameter("~[Periodo].[anho].[anho]", "anio"));
                 mdxParams.Add(new MdxParameter("~[Pais].[Pais].[Pais]", "pais"));
+                mdxParams.Add(new MdxParameter("~[Measures].[MesKey]", "meskey"));
                 mdxParams.Add(new MdxParameter("~[Periodo].[Mes].[Mes]", "mes"));
-                string mdx = @"SELECT 
-                                        NON EMPTY {[Measures].[Ton Netas Expo],[Measures].[Valor Expo Miles FOB Dol]} ON 0, 
-                                        NON EMPTY filter({{ @anio } * [Periodo].[Mes].[Mes]},[Measures].[Ton Netas Expo]>0) ON 1 FROM [Agronet Comercio] WHERE { @cadena * {";
+               
+                string mdx = @"WITH MEMBER [Measures].[MesKey] AS [Periodo].[Mes].CURRENTMEMBER.MEMBER_KEY
+                                SELECT 
+                                NON EMPTY {[Measures].[MesKey], [Measures].[Ton Netas Expo], [Measures].[Valor Expo Miles FOB Dol]} ON 0, 
+                                NON EMPTY filter({{ @anio } * [Periodo].[Mes].[Mes]},[Measures].[Ton Netas Expo]>0) ON 1 FROM [Agronet Comercio] WHERE { @cadena * {";
                 for (int i = 0; i < parameters.partida.Count; i++)
                 {
                     mdx += (i + 1 == parameters.partida.Count) ? "@partida" + i : "@partida" + i + ",";
@@ -129,8 +132,9 @@ namespace AgronetEstadisticas.Controllers
                         foreach (var d1 in (from d in result.AsEnumerable()
                                             select d))
                         {
-                            Data data1 = new Data { name = Convert.ToString(d1["anio"] + " " + d1["mes"]), y = Convert.ToDouble(d1["valor"]) };
-                            Data data2 = new Data { name = Convert.ToString(d1["anio"] + " " + d1["mes"]), y = Convert.ToDouble(d1["volumen"]) };
+                            DateTime dateValue = new DateTime(Convert.ToInt32(d1["anio"]), Convert.ToInt32(d1["meskey"]), 1);
+                            Data data1 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["valor"]) };
+                            Data data2 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["volumen"]) };
 
                             serie1.data.Add(data1);
                             serie2.data.Add(data2);
@@ -148,7 +152,8 @@ namespace AgronetEstadisticas.Controllers
                         foreach (var d1 in (from d in result1.AsEnumerable()
                                             select d))
                         {
-                            Data data1 = new Data { name = Convert.ToString(d1["anio"] + " " + d1["mes"]), y = Convert.ToDouble(d1["valor"]) / Convert.ToDouble(d1["volumen"]) };
+                            DateTime dateValue = new DateTime(Convert.ToInt32(d1["anio"]), Convert.ToInt32(d1["meskey"]), 1);
+                            Data data1 = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(d1["valor"]) / Convert.ToDouble(d1["volumen"]) };
                             serie3.data.Add(data1);
                         }
 
