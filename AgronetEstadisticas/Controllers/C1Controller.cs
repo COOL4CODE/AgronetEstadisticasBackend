@@ -35,11 +35,12 @@ namespace AgronetEstadisticas.Controllers
                     case 1:
                         parameter.name = "departamento";
                         string sql1 = @"SELECT DISTINCT
-                                        agromapas.base.v_departamento.codigo departamentocod, 
-                                        agromapas.base.v_departamento.nombre departamento
-                                    FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.eva_mpal.v_productodetalle ON agromapas.eva_mpal.v_evadepartamental.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto, 
-                                        agromapas.base.v_departamento
-                                    ORDER BY agromapas.base.v_departamento.nombre ASC";
+                                        agromapas.base.departamento.codigo departamentocod, 
+                                        agromapas.base.departamento.nombre departamento
+                                    FROM agromapas.eva_mpal.v_evadepartamental 
+INNER JOIN agromapas.eva_mpal.v_productodetalle ON agromapas.eva_mpal.v_evadepartamental.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto, 
+                                        agromapas.base.departamento
+                                    ORDER BY agromapas.base.departamento.nombre ASC";
                         DataTable data1 = adapter.GetDataTable(sql1);
                         foreach (var p in (from p in data1.AsEnumerable()
                                            select p))
@@ -54,7 +55,7 @@ namespace AgronetEstadisticas.Controllers
                         parameter.name = "anio";
                         string sql2 = @"SELECT DISTINCT
     agromapas.eva_mpal.v_evadepartamental.anho_eva as anio
-FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.v_departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
     INNER JOIN agromapas.eva_mpal.v_productodetalle ON agromapas.eva_mpal.v_evadepartamental.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
 ORDER BY agromapas.eva_mpal.v_evadepartamental.anho_eva;";
                         DataTable data2 = adapter.GetDataTable(sql2);
@@ -70,9 +71,9 @@ ORDER BY agromapas.eva_mpal.v_evadepartamental.anho_eva;";
                         string sql3 = String.Format(@"SELECT DISTINCT
     agromapas.eva_mpal.v_productodetalle.codigoagronetproducto as productocod, 
     agromapas.eva_mpal.v_productodetalle.nombrecomun as producto
-FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.v_departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
     INNER JOIN agromapas.eva_mpal.v_productodetalle ON agromapas.eva_mpal.v_evadepartamental.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
-    WHERE agromapas.base.v_departamento.codigo = {0}
+    WHERE agromapas.base.departamento.codigo = {0}
 ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departamento);
                         DataTable data3 = adapter.GetDataTable(sql3);
                         foreach (var p in (from p in data3.AsEnumerable()
@@ -98,7 +99,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.produccion_eva /
                                                                     (SELECT SUM(v_eva_dptal.produccion_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_produccion_nacional,
@@ -107,13 +108,13 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.areacosechada_eva /
                                                                     (SELECT SUM(v_eva_dptal.areacosechada_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_area_nacional
 
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva >= {0}
                                                                 AND eva_anual.anho_eva <= {1}
@@ -122,7 +123,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun,
-                                                                agromapas.base.v_departamento.nombre
+                                                                agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto, parameters.departamento));
                 switch (parameters.id)
@@ -200,7 +201,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                         {
                             rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
-                                                                agromapas.base.v_departamento.nombre,
+                                                                agromapas.base.departamento.nombre,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
@@ -210,7 +211,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.produccion_eva /
                                                                     (SELECT SUM(v_eva_dptal.produccion_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_produccion_nacional,
@@ -219,13 +220,13 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.areacosechada_eva /
                                                                     (SELECT SUM(v_eva_dptal.areacosechada_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_area_nacional
 
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva >= {0}
                                                                 AND eva_anual.anho_eva <= {1}
@@ -234,7 +235,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun,
-                                                                agromapas.base.v_departamento.nombre
+                                                                agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto, parameters.departamento))
                         };
@@ -266,7 +267,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                         case 1:
                             var sql1 = @"SELECT DISTINCT
                                 agromapas.eva_mpal.v_evadepartamental.anho_eva as anho_eva
-                            FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.v_departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                            FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON agromapas.eva_mpal.v_evadepartamental.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                             WHERE 
                                 agromapas.eva_mpal.v_productodetalle.codigoagronetproducto = " + parameters.producto + @"
@@ -285,7 +286,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                             var sql2 = @"SELECT DISTINCT
                                 agromapas.eva_mpal.v_productodetalle.codigoagronetproducto as productocod, 
                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto
-                            FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.v_departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                            FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON agromapas.eva_mpal.v_evadepartamental.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
 
                             ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun
@@ -311,7 +312,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento
                                                                 
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva >= {0}
                                                                 AND eva_anual.anho_eva <= {1}
@@ -377,7 +378,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
-                                                                agromapas.base.v_departamento.nombre,
+                                                                agromapas.base.departamento.nombre,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento,
@@ -386,7 +387,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.produccion_eva /
                                                                     (SELECT SUM(v_eva_dptal.produccion_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_produccion_nacional,
@@ -395,13 +396,13 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.areacosechada_eva /
                                                                     (SELECT SUM(v_eva_dptal.areacosechada_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_area_nacional
 
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva >= {0}
                                                                 AND eva_anual.anho_eva <= {1}
@@ -410,7 +411,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun,
-                                                                agromapas.base.v_departamento.nombre
+                                                                agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto))
                             };
@@ -522,7 +523,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                     DataTable results = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
-                                                                agromapas.base.v_departamento.nombre as departamento,
+                                                                agromapas.base.departamento.nombre as departamento,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento,
@@ -531,7 +532,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.produccion_eva /
                                                                     (SELECT SUM(v_eva_dptal.produccion_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_produccion_nacional,
@@ -540,13 +541,13 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.areacosechada_eva /
                                                                     (SELECT SUM(v_eva_dptal.areacosechada_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_area_nacional
 
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva >= {0}
                                                                 AND eva_anual.anho_eva <= {1}
@@ -555,7 +556,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun,
-                                                                agromapas.base.v_departamento.nombre
+                                                                agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto));
 
@@ -680,7 +681,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                             Table table = new Table { rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
-                                                                agromapas.base.v_departamento.nombre as departamento,
+                                                                agromapas.base.departamento.nombre as departamento,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento,
@@ -689,7 +690,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.produccion_eva /
                                                                     (SELECT SUM(v_eva_dptal.produccion_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_produccion_nacional,
@@ -698,13 +699,13 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 SUM(eva_anual.areacosechada_eva /
                                                                     (SELECT SUM(v_eva_dptal.areacosechada_eva)
                                                                 FROM agromapas.eva_mpal.v_evadepartamental v_eva_dptal
-                                                                INNER JOIN agromapas.base.v_departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON v_eva_dptal.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 WHERE v_eva_dptal.anho_eva = eva_anual.anho_eva
                                                                 AND v_eva_dptal.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 GROUP BY v_eva_dptal.anho_eva)*100) as participacion_area_nacional
 
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva >= {0}
                                                                 AND eva_anual.anho_eva <= {1}
@@ -713,7 +714,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun,
-                                                                agromapas.base.v_departamento.nombre
+                                                                agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto)) };
                             returnData = (Table)table;
@@ -806,18 +807,18 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
 
                     DataTable results = adapter.GetDataTable(String.Format(@"SELECT
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
-                                                                agromapas.base.v_departamento.nombre as departamento,
+                                                                agromapas.base.departamento.nombre as departamento,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento_eva
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva = {0}
                                                                 AND agromapas.eva_mpal.v_productodetalle.codigoagronetproducto = {1}
                                                                 GROUP BY
-                                                                eva_anual.codigodepartamento_eva, agromapas.base.v_departamento.nombre, agromapas.eva_mpal.v_productodetalle.nombrecomun
-                                                                ORDER BY agromapas.base.v_departamento.nombre", parameters.anio, parameters.producto));
+                                                                eva_anual.codigodepartamento_eva, agromapas.base.departamento.nombre, agromapas.eva_mpal.v_productodetalle.nombrecomun
+                                                                ORDER BY agromapas.base.departamento.nombre", parameters.anio, parameters.producto));
                     switch (parameters.id)
                     {
                         case 1:
@@ -852,21 +853,21 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                 rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
-                                                                agromapas.base.v_departamento.nombre as departamento,
+                                                                agromapas.base.departamento.nombre as departamento,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva = {0}
                                                                 AND agromapas.eva_mpal.v_productodetalle.codigoagronetproducto = {1}
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun,
-                                                                agromapas.base.v_departamento.nombre
+                                                                agromapas.base.departamento.nombre
 
-                                                                ORDER BY eva_anual.anho_eva, agromapas.base.v_departamento.nombre", parameters.anio, parameters.producto))
+                                                                ORDER BY eva_anual.anho_eva, agromapas.base.departamento.nombre", parameters.anio, parameters.producto))
                             };
                             returnData = (Table)table;
                             break;
@@ -949,13 +950,13 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                 case "grafico":
 
                     DataTable results = adapter.GetDataTable(String.Format(@"SELECT
-                                                                agromapas.base.v_departamento.nombre as departamento,
+                                                                agromapas.base.departamento.nombre as departamento,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva >= {0}
                                                                 AND eva_anual.anho_eva <= {1}
@@ -963,7 +964,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 GROUP BY
                                                                 eva_anual.codigoagronetproducto_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun,
-                                                                agromapas.base.v_departamento.nombre
+                                                                agromapas.base.departamento.nombre
                                                                 ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.anio_inicial, parameters.anio_final, parameters.departamento));
                     switch (parameters.id)
                     {
@@ -1026,14 +1027,14 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                             Table table = new Table
                             {
                                 rows = adapter.GetDataTable(String.Format(@"SELECT
-                                                                agromapas.base.v_departamento.nombre as departamento,
+                                                                agromapas.base.departamento.nombre as departamento,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
                                                                 eva_anual.anho_eva,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento
                                                                 FROM agromapas.eva_mpal.v_evadepartamental eva_anual
-                                                                INNER JOIN agromapas.base.v_departamento ON eva_anual.codigodepartamento_eva = agromapas.base.v_departamento.codigo::VARCHAR
+                                                                INNER JOIN agromapas.base.departamento ON eva_anual.codigodepartamento_eva = agromapas.base.departamento.codigo::VARCHAR
                                                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON eva_anual.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                                 WHERE eva_anual.anho_eva >= {0}
                                                                 AND eva_anual.anho_eva <= {1}
@@ -1041,7 +1042,7 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                 GROUP BY
                                                                 eva_anual.codigoagronetproducto_eva,
                                                                 agromapas.eva_mpal.v_productodetalle.nombrecomun,
-                                                                agromapas.base.v_departamento.nombre,
+                                                                agromapas.base.departamento.nombre,
                                                                 eva_anual.anho_eva
                                                                 ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun, eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.departamento))
                             };
@@ -1562,10 +1563,10 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                         case 1:
                             parameter.name = "departamento";
                             foreach (var p in (from p in adapter.GetDataTable(@"SELECT DISTINCT
-                                                                                agromapas.base.v_departamento.codigodane departamentocod, 
-                                                                                agromapas.base.v_departamento.nombre departamento
-                                                                                FROM agromapas.base.v_departamento
-                                                                                ORDER BY agromapas.base.v_departamento.nombre ASC").AsEnumerable()
+                                                                                v_dep.codigo departamentocod, 
+                                                                                v_dep.nombre departamento
+                                                                                FROM agromapas.base.departamento v_dep
+                                                                                ORDER BY v_dep.nombre ASC").AsEnumerable()
                                                select p))
                             {
                                 ParameterData param = new ParameterData { value = Convert.ToString(p["departamentocod"]), name = Convert.ToString(p["departamento"]).Trim() };
@@ -1575,8 +1576,8 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                             break;
                         case 2:
                             parameter.name = "municipio";
-                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT v_mun.codigodane municipiocod, v_mun.nombre municipio FROM agromapas.base.v_municipio v_mun
-                                                                                            WHERE substring(v_mun.codigodane from 1 for 2) = '{0}'
+                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT v_mun.codigo municipiocod, v_mun.nombre municipio FROM agromapas.base.municipio v_mun
+                                                                                            WHERE v_mun.departamento = {0}
                                                                                             ORDER BY v_mun.nombre ASC;", parameters.departamento)).AsEnumerable()
                                                select p))
                             {
@@ -1611,10 +1612,9 @@ ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departame
                                                                             INNER JOIN agromapas.eva_mpal.v_productodetalle v_prod ON v_prod.codigoagronetproducto = v_evamun.codigoagronetproducto_eva
                                                                             WHERE v_evamun.anho_eva >= {0}
                                                                             AND v_evamun.anho_eva <= {1}
-                                                                            AND substring(v_evamun.codigomunicipio_eva::VARCHAR from 1 for 2) = '{2}'
-                                                                            AND v_evamun.codigomunicipio_eva = '{3}'
+                                                                            AND v_evamun.codigomunicipio_eva = '{2}'
                                                                             GROUP BY v_prod.nombrecomun, v_evamun.anho_eva
-                                                                            ORDER BY v_prod.nombrecomun, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.departamento, parameters.municipio));
+                                                                            ORDER BY v_prod.nombrecomun, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.municipio));
 
                     Chart chart = new Chart { series = new List<Series>() };
                     switch (parameters.id)
