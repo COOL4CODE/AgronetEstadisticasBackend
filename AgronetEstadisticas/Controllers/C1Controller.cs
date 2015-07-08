@@ -1278,23 +1278,19 @@ namespace AgronetEstadisticas.Controllers
                             break;
 
                         case 4:
-                            string sql6 = @"
-                                            SELECT 
-                                              pi.anho as anio, 
-                                              pi.codigoorientacion as orientacioncod, 
-                                              po.descripcion as orientacion, 
-                                              SUM(pi.total) as total_animales
-                                            FROM 
-                                              agromapas.pecuario.inventariobovinoorientacion pi, 
-                                              agromapas.pecuario.orientacionbovino po 
-                                            WHERE 
-                                              po.codigo = pi.codigoorientacion AND pi.anho >= " + parameters.anio_inicial + @" AND pi.anho <= " + parameters.anio_final + @"
-                                            GROUP BY pi.anho, pi.codigoorientacion, po.descripcion
-                                            ORDER BY pi.anho, 
-                                              pi.codigoorientacion
-                                            ";
-
-                            DataTable results4 = adapter.GetDataTable(sql6);
+                            DataTable results4 = adapter.GetDataTable(@"SELECT 
+                                                                        pi.anho as anio, 
+                                                                        pi.codigoedadtipobovino as codigoedadbovino, 
+                                                                        po.descripcion, 
+                                                                        SUM(pi.totalhembras) + SUM(totalmachos) AS total_animales
+                                                                        FROM agromapas.pecuario.inventariobovinogrupo pi
+                                                                        INNER JOIN agromapas.pecuario.orientacionbovino po ON po.codigo = pi.codigoedadtipobovino
+                                                                        WHERE 
+                                                                        /*PARAMETROS*/
+                                                                        pi.anho >= " + parameters.anio_inicial + @" AND pi.anho <= " + parameters.anio_final + @"
+                                                                        AND pi.codigodepto in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                                                        GROUP BY pi.anho, pi.codigoedadtipobovino, po.descripcion
+                                                                        ORDER BY pi.anho, pi.codigoedadtipobovino");
                             Chart chart4 = new Chart { subtitle = "", series = new List<Series>() };
 
                             var query4 = from r in results4.AsEnumerable()
