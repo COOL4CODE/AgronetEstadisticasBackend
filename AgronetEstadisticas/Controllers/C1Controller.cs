@@ -1281,7 +1281,7 @@ namespace AgronetEstadisticas.Controllers
                             DataTable results4 = adapter.GetDataTable(@"SELECT 
                                                                         pi.anho as anio, 
                                                                         pi.codigoedadtipobovino as codigoedadbovino, 
-                                                                        po.descripcion, 
+                                                                        po.descripcion as orientacion, 
                                                                         SUM(pi.totalhembras) + SUM(totalmachos) AS total_animales
                                                                         FROM agromapas.pecuario.inventariobovinogrupo pi
                                                                         INNER JOIN agromapas.pecuario.orientacionbovino po ON po.codigo = pi.codigoedadtipobovino
