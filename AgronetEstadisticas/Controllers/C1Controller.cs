@@ -1574,7 +1574,8 @@ namespace AgronetEstadisticas.Controllers
                             break;
                         case 2:
                             parameter.name = "municipio";
-                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT v_mun.codigo municipiocod, v_mun.nombre municipio FROM agromapas.base.municipio v_mun
+                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3) municipiocod, v_mun.nombre municipio 
+                                                                                            FROM agromapas.base.municipio v_mun
                                                                                             WHERE v_mun.departamento = {0}
                                                                                             ORDER BY v_mun.nombre ASC;", parameters.departamento)).AsEnumerable()
                                                select p))
