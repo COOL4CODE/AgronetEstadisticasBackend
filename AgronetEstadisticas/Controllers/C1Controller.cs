@@ -43,7 +43,7 @@ namespace AgronetEstadisticas.Controllers
                         foreach (var p in (from p in data1.AsEnumerable()
                                            select p))
                         {
-                            ParameterData param = new ParameterData { name = Convert.ToString(p["departamento"]), value = Convert.ToString(p["departamentocod"]) };
+                            ParameterData param = new ParameterData { name = Convert.ToString(p["departamento"]).Trim(), value = Convert.ToString(p["departamentocod"]) };
                             parameter.data.Add(param);
                         }
                         break;
@@ -67,12 +67,12 @@ namespace AgronetEstadisticas.Controllers
                         parameter.name = "producto";
                         string sql3 = String.Format(@"SELECT DISTINCT
                                                         agromapas.eva_mpal.v_productodetalle.codigoagronetproducto as productocod, 
-                                                        agromapas.eva_mpal.v_productodetalle.nombrecomun as producto
+                                                        agromapas.eva_mpal.v_productodetalle.descripcion as producto
                                                     FROM agromapas.eva_mpal.v_evadepartamental 
                                                     INNER JOIN agromapas.base.departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva = right('0'::text || agromapas.base.departamento.codigo::VARCHAR, 2)
                                                     INNER JOIN agromapas.eva_mpal.v_productodetalle ON agromapas.eva_mpal.v_evadepartamental.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
                                                     WHERE agromapas.base.departamento.codigo = {0}
-                                                    ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.departamento);
+                                                    ORDER BY agromapas.eva_mpal.v_productodetalle.descripcion", parameters.departamento);
                         DataTable data3 = adapter.GetDataTable(sql3);
                         foreach (var p in (from p in data3.AsEnumerable()
                                            select p))
@@ -88,7 +88,7 @@ namespace AgronetEstadisticas.Controllers
             {
                 DataTable result = adapter.GetDataTable(String.Format(@"SELECT
                                                                         eva_anual.anho_eva as anho_eva,
-                                                                        agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                        agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                         SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                         SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                         SUM(eva_anual.rendimiento_eva) as rendimiento,
@@ -120,7 +120,7 @@ namespace AgronetEstadisticas.Controllers
                                                                         AND agromapas.base.departamento.codigo = {3}
                                                                         GROUP BY
                                                                         eva_anual.anho_eva,
-                                                                        agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                        agromapas.eva_mpal.v_productodetalle.descripcion,
                                                                         agromapas.base.departamento.nombre
 
                                                                         ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto, parameters.departamento));
@@ -200,7 +200,7 @@ namespace AgronetEstadisticas.Controllers
                             rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
                                                                 agromapas.base.departamento.nombre,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento,
@@ -232,7 +232,7 @@ namespace AgronetEstadisticas.Controllers
                                                                 AND agromapas.base.departamento.codigo = '{3}'
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion,
                                                                 agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto, parameters.departamento))
@@ -283,18 +283,18 @@ namespace AgronetEstadisticas.Controllers
                         case 2:
                             var sql2 = @"SELECT DISTINCT
                                 agromapas.eva_mpal.v_productodetalle.codigoagronetproducto as productocod, 
-                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto
+                                agromapas.eva_mpal.v_productodetalle.descripcion as producto
                             FROM agromapas.eva_mpal.v_evadepartamental INNER JOIN agromapas.base.departamento ON agromapas.eva_mpal.v_evadepartamental.codigodepartamento_eva =  right('0'::text || agromapas.base.departamento.codigo::VARCHAR, 2)
                                 INNER JOIN agromapas.eva_mpal.v_productodetalle ON agromapas.eva_mpal.v_evadepartamental.codigoagronetproducto_eva = agromapas.eva_mpal.v_productodetalle.codigoagronetproducto
 
-                            ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun
+                            ORDER BY agromapas.eva_mpal.v_productodetalle.descripcion
                             ";
                             Parameter parameter2 = new Parameter { name = "producto", data = new List<ParameterData>() };
                             DataTable data2 = adapter.GetDataTable(sql2);
                             foreach (var p in (from p in data2.AsEnumerable()
                                                select p))
                             {
-                                ParameterData param = new ParameterData { name = Convert.ToString(p["producto"]), value = Convert.ToString(p["productocod"]) };
+                                ParameterData param = new ParameterData { name = Convert.ToString(p["producto"]).Trim(), value = Convert.ToString(p["productocod"]) };
                                 parameter2.data.Add(param);
                             }
                             returnData = (Parameter)parameter2;
@@ -375,7 +375,7 @@ namespace AgronetEstadisticas.Controllers
                             {
                                 rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                 agromapas.base.departamento.nombre,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
@@ -408,7 +408,7 @@ namespace AgronetEstadisticas.Controllers
 
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion,
                                                                 agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto))
@@ -520,7 +520,7 @@ namespace AgronetEstadisticas.Controllers
 
                     DataTable results = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                 agromapas.base.departamento.nombre as departamento,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
@@ -553,7 +553,7 @@ namespace AgronetEstadisticas.Controllers
                                                                 AND eva_anual.codigodepartamento_eva IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion,
                                                                 agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto));
@@ -678,7 +678,7 @@ namespace AgronetEstadisticas.Controllers
                         case 1:
                             Table table = new Table { rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                 agromapas.base.departamento.nombre as departamento,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
@@ -711,7 +711,7 @@ namespace AgronetEstadisticas.Controllers
                                                                 AND eva_anual.codigodepartamento_eva IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion,
                                                                 agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.producto)) };
@@ -804,7 +804,7 @@ namespace AgronetEstadisticas.Controllers
                 case "grafico":
 
                     DataTable results = adapter.GetDataTable(String.Format(@"SELECT
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                 agromapas.base.departamento.nombre as departamento,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
@@ -815,7 +815,7 @@ namespace AgronetEstadisticas.Controllers
                                                                 WHERE eva_anual.anho_eva = {0}
                                                                 AND agromapas.eva_mpal.v_productodetalle.codigoagronetproducto = {1}
                                                                 GROUP BY
-                                                                eva_anual.codigodepartamento_eva, agromapas.base.departamento.nombre, agromapas.eva_mpal.v_productodetalle.nombrecomun
+                                                                eva_anual.codigodepartamento_eva, agromapas.base.departamento.nombre, agromapas.eva_mpal.v_productodetalle.descripcion
                                                                 ORDER BY agromapas.base.departamento.nombre", parameters.anio, parameters.producto));
                     switch (parameters.id)
                     {
@@ -850,7 +850,7 @@ namespace AgronetEstadisticas.Controllers
                             {
                                 rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 eva_anual.anho_eva as anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                 agromapas.base.departamento.nombre as departamento,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
@@ -862,7 +862,7 @@ namespace AgronetEstadisticas.Controllers
                                                                 AND agromapas.eva_mpal.v_productodetalle.codigoagronetproducto = {1}
                                                                 GROUP BY
                                                                 eva_anual.anho_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion,
                                                                 agromapas.base.departamento.nombre
 
                                                                 ORDER BY eva_anual.anho_eva, agromapas.base.departamento.nombre", parameters.anio, parameters.producto))
@@ -949,7 +949,7 @@ namespace AgronetEstadisticas.Controllers
 
                     DataTable results = adapter.GetDataTable(String.Format(@"SELECT
                                                                 agromapas.base.departamento.nombre as departamento,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
                                                                 SUM(eva_anual.rendimiento_eva) as rendimiento
@@ -961,9 +961,9 @@ namespace AgronetEstadisticas.Controllers
                                                                 AND eva_anual.codigodepartamento_eva = '{2}'
                                                                 GROUP BY
                                                                 eva_anual.codigoagronetproducto_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion,
                                                                 agromapas.base.departamento.nombre
-                                                                ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun", parameters.anio_inicial, parameters.anio_final, parameters.departamento));
+                                                                ORDER BY agromapas.eva_mpal.v_productodetalle.descripcion", parameters.anio_inicial, parameters.anio_final, parameters.departamento));
                     switch (parameters.id)
                     {
                         case 1:
@@ -1026,7 +1026,7 @@ namespace AgronetEstadisticas.Controllers
                             {
                                 rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                 agromapas.base.departamento.nombre as departamento,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun as producto,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion as producto,
                                                                 eva_anual.anho_eva,
                                                                 SUM(eva_anual.areacosechada_eva) as area_eva,
                                                                 SUM(eva_anual.produccion_eva) as produccion_eva,
@@ -1039,10 +1039,10 @@ namespace AgronetEstadisticas.Controllers
                                                                 AND eva_anual.codigodepartamento_eva = '{2}'
                                                                 GROUP BY
                                                                 eva_anual.codigoagronetproducto_eva,
-                                                                agromapas.eva_mpal.v_productodetalle.nombrecomun,
+                                                                agromapas.eva_mpal.v_productodetalle.descripcion,
                                                                 agromapas.base.departamento.nombre,
                                                                 eva_anual.anho_eva
-                                                                ORDER BY agromapas.eva_mpal.v_productodetalle.nombrecomun, eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.departamento))
+                                                                ORDER BY agromapas.eva_mpal.v_productodetalle.descripcion, eva_anual.anho_eva", parameters.anio_inicial, parameters.anio_final, parameters.departamento))
                             };
                             returnData = (Table)table;
                             break;
@@ -1591,7 +1591,7 @@ namespace AgronetEstadisticas.Controllers
                 case "grafico":
                     DataTable results = adapter.GetDataTable(String.Format(@"SELECT
                                                                             v_evamun.anho_eva as anio,
-                                                                            v_prod.nombrecomun as producto,
+                                                                            v_prod.descripcion as producto,
                                                                             SUM(v_evamun.areasembrada_eva) as area_sembrada,
                                                                             SUM(v_evamun.areacosechada_eva) as area_cosechada,
                                                                             SUM(v_evamun.produccion_eva) as produccion,
@@ -1601,8 +1601,8 @@ namespace AgronetEstadisticas.Controllers
                                                                             WHERE v_evamun.anho_eva >= {0}
                                                                             AND v_evamun.anho_eva <= {1}
                                                                             AND v_evamun.codigomunicipio_eva = '{2}'
-                                                                            GROUP BY v_prod.nombrecomun, v_evamun.anho_eva
-                                                                            ORDER BY v_prod.nombrecomun, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.municipio));
+                                                                            GROUP BY v_prod.descripcion, v_evamun.anho_eva
+                                                                            ORDER BY v_prod.descripcion, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.municipio));
 
                     Chart chart = new Chart { series = new List<Series>() };
                     switch (parameters.id)
@@ -1689,7 +1689,7 @@ namespace AgronetEstadisticas.Controllers
                             {
                                 rows = adapter.GetDataTable(String.Format(@"SELECT
                                                                             v_evamun.anho_eva as anio,
-                                                                            v_prod.nombrecomun as producto,
+                                                                            v_prod.descripcion as producto,
                                                                             SUM(v_evamun.areasembrada_eva) as area_sembrada,
                                                                             SUM(v_evamun.areacosechada_eva) as area_cosechada,
                                                                             SUM(v_evamun.produccion_eva) as produccion,
@@ -1699,8 +1699,8 @@ namespace AgronetEstadisticas.Controllers
                                                                             WHERE v_evamun.anho_eva >= {0} 
                                                                             AND v_evamun.anho_eva <= {1}
                                                                             AND v_evamun.codigomunicipio_eva = '{2}'
-                                                                            GROUP BY v_evamun.anho_eva, v_prod.nombrecomun
-                                                                            ORDER BY v_evamun.anho_eva, v_prod.nombrecomun;", parameters.anio_inicial, parameters.anio_final, parameters.municipio))
+                                                                            GROUP BY v_evamun.anho_eva, v_prod.descripcion
+                                                                            ORDER BY v_evamun.anho_eva, v_prod.descripcion;", parameters.anio_inicial, parameters.anio_final, parameters.municipio))
                             };
                             returnData = (Table)table;
                             break;
@@ -1809,8 +1809,8 @@ namespace AgronetEstadisticas.Controllers
                                                                             AND v_evamun.anho_eva <= {1}
                                                                             AND v_evamun.codigoagronetproducto_eva = {2}
                                                                             AND right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3) IN (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @")
-                                                                            GROUP BY v_mun.nombre, v_prod.nombrecomun, v_evamun.anho_eva
-                                                                            ORDER BY v_mun.nombre, v_prod.nombrecomun, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.producto));
+                                                                            GROUP BY v_mun.nombre, v_prod.descripcion, v_evamun.anho_eva
+                                                                            ORDER BY v_mun.nombre, v_prod.descripcion, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.producto));
 
                     Chart chart = new Chart { series = new List<Series>() };
                     switch (parameters.id)
@@ -1910,8 +1910,8 @@ namespace AgronetEstadisticas.Controllers
                                                                             AND v_evamun.anho_eva <= {1}
                                                                             AND v_evamun.codigoagronetproducto_eva = {2}
                                                                             AND right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3) IN (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @")
-                                                                            GROUP BY v_mun.nombre, v_prod.nombrecomun, v_evamun.anho_eva
-                                                                            ORDER BY v_mun.nombre, v_prod.nombrecomun, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.producto))
+                                                                            GROUP BY v_mun.nombre, v_prod.descripcion, v_evamun.anho_eva
+                                                                            ORDER BY v_mun.nombre, v_prod.descripcion, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.producto))
                             };
                             returnData = (Table)table;
                             break;
