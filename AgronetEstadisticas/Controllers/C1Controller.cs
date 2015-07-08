@@ -1718,6 +1718,192 @@ namespace AgronetEstadisticas.Controllers
             return Ok(returnData);
         }
 
+        [Route("api/Report/114")]
+        public IHttpActionResult postReport114(report114 parameters)
+        {
+            Object returnData = null;
+            PostgresqlAdapter adapter = new PostgresqlAdapter();
+
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter param = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            param.name = "producto";
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT
+                                                                                ev.codigoagronetproducto_eva as productocod,
+                                                                                ep.descripcion as producto
+                                                                                FROM
+                                                                                agromapas.eva_mpal.v_evamunicipal ev,
+                                                                                agromapas.eva_mpal.producto ep
+                                                                                WHERE
+                                                                                ep.codigoagronetcultivo = ev.codigoagronetproducto_eva
+                                                                                ORDER BY ep.descripcion").AsEnumerable()
+                                                select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["producto"]), value = Convert.ToString(d["productocod"]) };
+                                param.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param;
+                            break;
+                        case 2:
+                            parameter.name = "anio";
+                            foreach (var p in (from p in adapter.GetDataTable(@"SELECT DISTINCT v_evamun.anho_eva as anio
+                                                                                FROM agromapas.eva_mpal.v_evamunicipal v_evamun
+                                                                                ORDER BY v_evamun.anho_eva;").AsEnumerable()
+                                               select p["anio"]))
+                            {
+                                ParameterData param = new ParameterData { name = Convert.ToString(p), value = Convert.ToString(p) };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                        case 3:
+                            parameter.name = "departamento";
+                            foreach (var p in (from p in adapter.GetDataTable(@"SELECT DISTINCT
+                                                                                v_dep.codigo departamentocod, 
+                                                                                v_dep.nombre departamento
+                                                                                FROM agromapas.base.departamento v_dep
+                                                                                ORDER BY v_dep.nombre ASC").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData param = new ParameterData { value = Convert.ToString(p["departamentocod"]), name = Convert.ToString(p["departamento"]).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                        case 4:
+                            parameter.name = "municipio";
+                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3) municipiocod, v_mun.nombre municipio 
+                                                                                            FROM agromapas.base.municipio v_mun
+                                                                                            WHERE v_mun.departamento = {0}
+                                                                                            ORDER BY v_mun.nombre ASC;", parameters.departamento)).AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData param = new ParameterData { value = Convert.ToString(p["municipiocod"]), name = Convert.ToString(p["municipio"]).Trim() };
+                                parameter.data.Add(param);
+                            }
+                            returnData = (Parameter)parameter;
+                            break;
+                    }
+
+                    break;
+                case "grafico":
+                    DataTable results = adapter.GetDataTable(String.Format(@"SELECT
+                                                                            v_evamun.anho_eva as anio,
+                                                                            v_mun.nombre as municipio,
+                                                                            SUM(v_evamun.areasembrada_eva) as area_sembrada,
+                                                                            SUM(v_evamun.areacosechada_eva) as area_cosechada,
+                                                                            SUM(v_evamun.produccion_eva) as produccion,
+                                                                            SUM(v_evamun.rendimiento_eva) as rendimiento
+                                                                            FROM agromapas.eva_mpal.v_evamunicipal v_evamun
+                                                                            INNER JOIN agromapas.eva_mpal.v_productodetalle v_prod ON v_prod.codigoagronetproducto = v_evamun.codigoagronetproducto_eva
+                                                                            INNER JOIN agromapas.base.municipio v_mun ON v_evamun.codigomunicipio_eva =  right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3)
+                                                                            WHERE v_evamun.anho_eva >= {0}
+                                                                            AND v_evamun.anho_eva <= {1}
+                                                                            AND v_evamun.codigoagronetproducto_eva = {2}
+                                                                            AND right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3) IN (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @")
+                                                                            GROUP BY v_mun.nombre, v_prod.nombrecomun, v_evamun.anho_eva
+                                                                            ORDER BY v_mun.nombre, v_prod.nombrecomun, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.producto));
+
+                    Chart chart = new Chart { series = new List<Series>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            chart.subtitle = "Área sembrada de " + parameters.anio_inicial + " a " + parameters.anio_final;
+                            foreach (var municipioGroup in (from r in results.AsEnumerable()
+                                                            group r by r["municipio"]))
+                            {
+                                var serie = new Series { name = municipioGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in municipioGroup)
+                                {
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["area_sembrada"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                        case 2:
+                            chart.subtitle = "Área cosechada de " + parameters.anio_inicial + " a " + parameters.anio_final;
+                            foreach (var municipioGroup in (from r in results.AsEnumerable()
+                                                            group r by r["municipio"]))
+                            {
+                                var serie = new Series { name = municipioGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in municipioGroup)
+                                {
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["area_cosechada"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                        case 3:
+                            chart.subtitle = "Producción de " + parameters.anio_inicial + " a " + parameters.anio_final;
+                            foreach (var municipioGroup in (from r in results.AsEnumerable()
+                                                            group r by r["municipio"]))
+                            {
+                                var serie = new Series { name = municipioGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in municipioGroup)
+                                {
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["produccion"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                        case 4:
+                            chart.subtitle = "Rendimiento de " + parameters.anio_inicial + " a " + parameters.anio_final;
+                            foreach (var municipioGroup in (from r in results.AsEnumerable()
+                                                            group r by r["municipio"]))
+                            {
+                                var serie = new Series { name = municipioGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in municipioGroup)
+                                {
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["rendimiento"]) };
+                                    serie.data.Add(data);
+
+                                }
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                    }
+                    break;
+                case "tabla":
+
+                    switch (parameters.id)
+                    {
+                        case 1:
+                           
+                    }
+
+                    break;
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
         private long ToUnixTimestamp(DateTime target)
         {
             var date = new DateTime(1970, 1, 1, 0, 0, 0, target.Kind);
