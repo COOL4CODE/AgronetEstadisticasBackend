@@ -1727,11 +1727,11 @@ namespace AgronetEstadisticas.Controllers
             switch (parameters.tipo)
             {
                 case "parametro":
-                    Parameter param = new Parameter { data = new List<ParameterData>() };
+                    Parameter parameter = new Parameter { data = new List<ParameterData>() };
                     switch (parameters.id)
                     {
                         case 1:
-                            param.name = "producto";
+                            parameter.name = "producto";
                             foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT
                                                                                 ev.codigoagronetproducto_eva as productocod,
                                                                                 ep.descripcion as producto
@@ -1743,10 +1743,10 @@ namespace AgronetEstadisticas.Controllers
                                                                                 ORDER BY ep.descripcion").AsEnumerable()
                                                 select p))
                             {
-                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["producto"]), value = Convert.ToString(d["productocod"]) };
-                                param.data.Add(parameter);
+                                ParameterData param = new ParameterData { name = Convert.ToString(d["producto"]), value = Convert.ToString(d["productocod"]) };
+                                parameter.data.Add(param);
                             }
-                            returnData = (Parameter)param;
+                            returnData =    (Parameter)parameter;
                             break;
                         case 2:
                             parameter.name = "anio";
@@ -1890,7 +1890,27 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                           
+                           Table table = new Table
+                            {
+                                rows = adapter.GetDataTable(String.Format(@"SELECT
+                                                                            v_evamun.anho_eva as anio,
+                                                                            v_mun.nombre as municipio,
+                                                                            SUM(v_evamun.areasembrada_eva) as area_sembrada,
+                                                                            SUM(v_evamun.areacosechada_eva) as area_cosechada,
+                                                                            SUM(v_evamun.produccion_eva) as produccion,
+                                                                            SUM(v_evamun.rendimiento_eva) as rendimiento
+                                                                            FROM agromapas.eva_mpal.v_evamunicipal v_evamun
+                                                                            INNER JOIN agromapas.eva_mpal.v_productodetalle v_prod ON v_prod.codigoagronetproducto = v_evamun.codigoagronetproducto_eva
+                                                                            INNER JOIN agromapas.base.municipio v_mun ON v_evamun.codigomunicipio_eva =  right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3)
+                                                                            WHERE v_evamun.anho_eva >= {0}
+                                                                            AND v_evamun.anho_eva <= {1}
+                                                                            AND v_evamun.codigoagronetproducto_eva = {2}
+                                                                            AND right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3) IN (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @")
+                                                                            GROUP BY v_mun.nombre, v_prod.nombrecomun, v_evamun.anho_eva
+                                                                            ORDER BY v_mun.nombre, v_prod.nombrecomun, v_evamun.anho_eva;", parameters.anio_inicial, parameters.anio_final, parameters.producto))
+                            };
+                            returnData = (Table)table;
+                            break;
                     }
 
                     break;
