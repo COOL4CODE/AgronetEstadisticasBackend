@@ -1288,7 +1288,6 @@ namespace AgronetEstadisticas.Controllers
                                                                         WHERE 
                                                                         /*PARAMETROS*/
                                                                         pi.anho >= " + parameters.anio_inicial + @" AND pi.anho <= " + parameters.anio_final + @"
-                                                                        AND pi.codigodepto in (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
                                                                         GROUP BY pi.anho, pi.codigoedadtipobovino, po.descripcion
                                                                         ORDER BY pi.anho, pi.codigoedadtipobovino");
                             Chart chart4 = new Chart { subtitle = "", series = new List<Series>() };
