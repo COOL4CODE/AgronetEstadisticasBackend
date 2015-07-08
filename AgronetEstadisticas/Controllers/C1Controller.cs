@@ -1762,11 +1762,13 @@ namespace AgronetEstadisticas.Controllers
                             break;
                         case 3:
                             parameter.name = "departamento";
-                            foreach (var p in (from p in adapter.GetDataTable(@"SELECT DISTINCT
-                                                                                v_dep.codigo departamentocod, 
-                                                                                v_dep.nombre departamento
-                                                                                FROM agromapas.base.departamento v_dep
-                                                                                ORDER BY v_dep.nombre ASC").AsEnumerable()
+                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT DISTINCT
+                                                                                            v_dep.codigo departamentocod, 
+                                                                                            v_dep.nombre departamento
+                                                                                            FROM agromapas.base.departamento v_dep
+                                                                                            INNER JOIN agromapas.eva_mpal.v_evamunicipal v_evamun ON substring(v_evamun.codigomunicipio_eva::VARCHAR from 1 for 2) = right('0'::text || v_dep.codigo::VARCHAR, 2)
+                                                                                            WHERE v_evamun.codigoagronetproducto_eva = {0}
+                                                                                            ORDER BY v_dep.nombre ASC", parameters.producto)).AsEnumerable()
                                                select p))
                             {
                                 ParameterData param = new ParameterData { value = Convert.ToString(p["departamentocod"]), name = Convert.ToString(p["departamento"]).Trim() };
@@ -1776,10 +1778,12 @@ namespace AgronetEstadisticas.Controllers
                             break;
                         case 4:
                             parameter.name = "municipio";
-                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3) municipiocod, v_mun.nombre municipio 
+                            foreach (var p in (from p in adapter.GetDataTable(String.Format(@"SELECT DISTINCT right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3) municipiocod, v_mun.nombre municipio 
                                                                                             FROM agromapas.base.municipio v_mun
+                                                                                            INNER JOIN agromapas.eva_mpal.v_evamunicipal v_evamun ON v_evamun.codigomunicipio_eva = right('0'::text || v_mun.departamento, 2) || right('00'::text || v_mun.codigo, 3)
                                                                                             WHERE v_mun.departamento = {0}
-                                                                                            ORDER BY v_mun.nombre ASC;", parameters.departamento)).AsEnumerable()
+                                                                                            AND v_evamun.codigoagronetproducto_eva = {1}
+                                                                                            ORDER BY v_mun.nombre ASC;", parameters.departamento, parameters.producto)).AsEnumerable()
                                                select p))
                             {
                                 ParameterData param = new ParameterData { value = Convert.ToString(p["municipiocod"]), name = Convert.ToString(p["municipio"]).Trim() };
