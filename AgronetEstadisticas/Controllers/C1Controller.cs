@@ -1293,22 +1293,16 @@ namespace AgronetEstadisticas.Controllers
                                                                         ORDER BY pi.anho, pi.codigoedadtipobovino");
                             Chart chart4 = new Chart { subtitle = "", series = new List<Series>() };
 
-                            var query4 = from r in results4.AsEnumerable()
-                                         group r by r["orientacion"] into orientacionGroup
-                                         from anioGroup in
-                                             (from d in orientacionGroup
-                                              group d by d["anio"])
-                                         group anioGroup by orientacionGroup.Key;
-
-                            foreach (var orientacionGroup in query4)
+                            foreach (var productGroup in (from r in results4.AsEnumerable()
+                                                          group r by r["orientacion"]))
                             {
-                                var serie = new Series { name = orientacionGroup.Key.ToString(), data = new List<Data>() };
-                                foreach (var anioGroup in orientacionGroup)
+                                var serie = new Series { name = productGroup.Key.ToString().Trim(), data = new List<Data>() };
+                                foreach (var anioData in productGroup)
                                 {
-                                    double y = anioGroup.Sum(d => Convert.ToDouble(d["total_animales"]));
-                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioGroup.Key.ToString()), 1, 1);
-                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = y };
+                                    DateTime dateValue = new DateTime(Convert.ToInt32(anioData["anio"]), 1, 1);
+                                    var data = new Data { name = Convert.ToString(ToUnixTimestamp(dateValue)), y = Convert.ToDouble(anioData["total_animales"]) };
                                     serie.data.Add(data);
+
                                 }
                                 chart4.series.Add(serie);
                             }
