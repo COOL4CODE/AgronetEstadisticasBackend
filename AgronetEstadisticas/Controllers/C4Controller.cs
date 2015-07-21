@@ -236,8 +236,8 @@ namespace AgronetEstadisticas.Controllers
                     Table table = new Table { rows = new DataTable() };
                     switch (parameters.id)
                     {
-                        case 1:                            
-                            mdxParams.Add(new MdxParameter("~[Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig]", "partida"));
+                        case 1:
+                            mdxParams.Add(new MdxParameter("~[Producto].[Capitulo-Partida4-Partida10].[Descripcion Capitulo]", "partida"));
                             string mdx1 = @"SELECT { [Measures].[Ton Netas Expo], [Measures].[Valor Expo Miles FOB Dol] } ON COLUMNS, CROSSJOIN({NONEMPTY({
                                             [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5201-Algodón sin cardar ni peinar.],
                                             [Producto].[Capitulo-Partida4-Partida10].[Descripcion Partida4 Dig].&[5202-Desperdicios de algodón (incluidos los desperdicios de hilados y las hilachas).],
