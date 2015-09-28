@@ -414,7 +414,7 @@ namespace AgronetEstadisticas.Controllers
                     {
                         case 1:
                             param.name = "departamento";
-                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.departamento FROM clima.estaciontexto est ORDER BY est.departamento").AsEnumerable()
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.departamento FROM clima.estaciontexto est INNER JOIN clima.precipitacionperiodoreferenciaestacion pre ON pre.codigo = est.codigo ORDER BY est.departamento").AsEnumerable()
                                                select p))
                             {
                                 ParameterData parameter = new ParameterData { name = Convert.ToString(d["departamento"]), value = Convert.ToString(d["departamento"]) };
@@ -424,7 +424,7 @@ namespace AgronetEstadisticas.Controllers
                             break;
                         case 2:
                             param.name = "municipio";
-                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.municipio FROM clima.estaciontexto est
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.municipio FROM clima.estaciontexto est INNER JOIN clima.precipitacionperiodoreferenciaestacion pre ON pre.codigo = est.codigo
                                                                                 WHERE est.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") ORDER BY est.municipio").AsEnumerable()
                                                select p))
                             {
@@ -435,7 +435,7 @@ namespace AgronetEstadisticas.Controllers
                             break;
                        case 3:
                             param.name = "estacion";
-                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.codigo, est.nombre nombreestacion FROM clima.estaciontexto est
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.codigo, est.nombre nombreestacion FROM clima.estaciontexto est INNER JOIN clima.precipitacionperiodoreferenciaestacion pre ON pre.codigo = est.codigo
                                                                                 WHERE est.municipio IN  (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre").AsEnumerable()
                                                select p))
                             {
@@ -459,7 +459,7 @@ namespace AgronetEstadisticas.Controllers
                             chart.subtitle = "";
                             foreach (var d in (from g in results.AsEnumerable() select g))
                             {
-                                Series serie = new Series { name = Convert.ToString(d["nombreestacion"]) };
+                                Series serie = new Series { name = Convert.ToString(d["nombreestacion"]), data = new List<Data>() };
 
                                 serie.data.Add(new Data { name = "Enero", y = Convert.ToDouble(d["ene"]) });
                                 serie.data.Add(new Data { name = "Febrero", y = Convert.ToDouble(d["feb"]) });
