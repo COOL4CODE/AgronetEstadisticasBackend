@@ -400,5 +400,119 @@ namespace AgronetEstadisticas.Controllers
 
             return Ok(returnData);
         }
+    
+        [Route("api/Report/708")]
+        public IHttpActionResult postReport708(report708 parameters)
+        {
+            Object returnData = null;
+            PostgresqlAdapter adapter = new PostgresqlAdapter();
+            switch (parameters.tipo)
+            {
+                case "parametro":
+                    Parameter param = new Parameter { data = new List<ParameterData>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            param.name = "departamento";
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.departamento FROM clima.estaciontexto est ORDER BY est.departamento").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["departamento"]), value = Convert.ToString(d["departamento"]) };
+                                param.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param;
+                            break;
+                        case 2:
+                            param.name = "municipio";
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.municipio FROM clima.estaciontexto est
+                                                                                WHERE est.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") ORDER BY est.municipio").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["municipio"]), value = Convert.ToString(d["municipio"]) };
+                                param.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param;
+                            break;
+                       case 3:
+                            param.name = "estacion";
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.codigo, est.nombre nombreestacion FROM clima.estaciontexto est
+                                                                                WHERE est.municipio IN  (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre").AsEnumerable()
+                                               select p))
+                            {
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombreestacion"]), value = Convert.ToString(d["codigo"]) };
+                                param.data.Add(parameter);
+                            }
+                            returnData = (Parameter)param;
+                            break;
+                    }
+                    break;
+                case "grafico":
+                    Chart chart = new Chart { series = new List<Series>() };
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable results = adapter.GetDataTable(@"SELECT est.departamento, est.municipio, est.nombre nombreestacion, pre.* FROM 
+                                                                       clima.precipitacionperiodoreferenciaestacion pre
+                                                                       INNER JOIN clima.estaciontexto est ON pre.codigo = est.codigo
+                                                                       WHERE est.codigo IN (" + string.Join(",", parameters.estacion.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre");
+
+                            chart.subtitle = "";
+                            foreach (var d in (from g in results.AsEnumerable() select g))
+                            {
+                                Series serie = new Series { name = Convert.ToString(d["nombreestacion"]) };
+
+                                serie.data.Add(new Data { name = "Enero", y = Convert.ToDouble(d["ene"]) });
+                                serie.data.Add(new Data { name = "Febrero", y = Convert.ToDouble(d["feb"]) });
+                                serie.data.Add(new Data { name = "Marzo", y = Convert.ToDouble(d["mar"]) });
+                                serie.data.Add(new Data { name = "Abril", y = Convert.ToDouble(d["abr"]) });
+                                serie.data.Add(new Data { name = "Mayo", y = Convert.ToDouble(d["may"]) });
+                                serie.data.Add(new Data { name = "Junio", y = Convert.ToDouble(d["jun"]) });
+                                serie.data.Add(new Data { name = "Julio", y = Convert.ToDouble(d["jul"]) });
+                                serie.data.Add(new Data { name = "Agosto", y = Convert.ToDouble(d["ago"]) });
+                                serie.data.Add(new Data { name = "Septiembre", y = Convert.ToDouble(d["sep"]) });
+                                serie.data.Add(new Data { name = "Octubre", y = Convert.ToDouble(d["oct"]) });
+                                serie.data.Add(new Data { name = "Noviembre", y = Convert.ToDouble(d["nov"]) });
+                                serie.data.Add(new Data { name = "Diciembre", y = Convert.ToDouble(d["dic"]) });
+                                serie.data.Add(new Data { name = "Anual", y = Convert.ToDouble(d["anual"]) });
+
+                                chart.series.Add(serie);
+                            }
+
+                            returnData = (Chart)chart;
+                            break;
+                    }
+                    break;
+                case "tabla":
+                    switch (parameters.id)
+                    {
+                        case 1:
+                            DataTable tableResults = adapter.GetDataTable(@"SELECT est.departamento, est.municipio, est.nombre nombreestacion, pre.* FROM 
+                                                                       clima.precipitacionperiodoreferenciaestacion pre
+                                                                       INNER JOIN clima.estaciontexto est ON pre.codigo = est.codigo
+                                                                       WHERE est.codigo IN (" + string.Join(",", parameters.estacion.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre");
+
+
+                            Table table = new Table { rows = tableResults };
+                            returnData = (Table)table;
+                            break;
+                    }
+                    break;
+            }
+
+            if (returnData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(returnData);
+        }
+
+        private long ToUnixTimestamp(DateTime target)
+        {
+            var date = new DateTime(1970, 1, 1, 0, 0, 0, target.Kind);
+            var unixTimestamp = System.Convert.ToInt64((target - date).TotalSeconds);
+
+            return unixTimestamp;
+        }
     }
 }

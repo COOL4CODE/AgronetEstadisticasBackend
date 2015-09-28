@@ -259,6 +259,7 @@
     <Compile Include="Models\parametersBinding\report609.cs" />
     <Compile Include="Models\parametersBinding\report701.cs" />
     <Compile Include="Models\parametersBinding\report702.cs" />
+    <Compile Include="Models\parametersBinding\report708.cs" />
     <Compile Include="Models\parametersBinding\report801.cs" />
     <Compile Include="Models\parametersBinding\report802.cs" />
     <Compile Include="Models\parametersBinding\report803.cs" />
