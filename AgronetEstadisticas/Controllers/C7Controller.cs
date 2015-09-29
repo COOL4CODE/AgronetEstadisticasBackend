@@ -436,7 +436,7 @@ namespace AgronetEstadisticas.Controllers
                        case 3:
                             param.name = "estacion";
                             foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.codigo, est.nombre nombreestacion FROM clima.estaciontexto est INNER JOIN clima.precipitacionperiodoreferenciaestacion pre ON pre.codigo = est.codigo
-                                                                                WHERE est.municipio IN  (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre").AsEnumerable()
+                                                                                WHERE est.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") AND est.municipio IN  (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre").AsEnumerable()
                                                select p))
                             {
                                 ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombreestacion"]), value = Convert.ToString(d["codigo"]) };
