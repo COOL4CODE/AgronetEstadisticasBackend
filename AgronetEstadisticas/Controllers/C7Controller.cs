@@ -414,32 +414,38 @@ namespace AgronetEstadisticas.Controllers
                     {
                         case 1:
                             param.name = "departamento";
-                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.departamento FROM clima.estaciontexto est INNER JOIN clima.precipitacionperiodoreferenciaestacion pre ON pre.codigo = est.codigo ORDER BY est.departamento").AsEnumerable()
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT dep.codigo, dep.nombre FROM clima.estacion est
+                                                                                INNER JOIN base.departamento dep ON dep.codigo = est.departamento
+                                                                                ORDER BY dep.nombre").AsEnumerable()
                                                select p))
                             {
-                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["departamento"]), value = Convert.ToString(d["departamento"]) };
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombre"]), value = Convert.ToString(d["codigo"]) };
                                 param.data.Add(parameter);
                             }
                             returnData = (Parameter)param;
                             break;
                         case 2:
                             param.name = "municipio";
-                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.municipio FROM clima.estaciontexto est INNER JOIN clima.precipitacionperiodoreferenciaestacion pre ON pre.codigo = est.codigo
-                                                                                WHERE est.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") ORDER BY est.municipio").AsEnumerable()
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT mun.codigo, mun.nombre FROM clima.estacion est
+                                                                                INNER JOIN base.municipio mun ON mun.codigo = est.municipio
+                                                                                WHERE est.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                                                                ORDER BY mun.nombre").AsEnumerable()
                                                select p))
                             {
-                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["municipio"]), value = Convert.ToString(d["municipio"]) };
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombre"]), value = Convert.ToString(d["codigo"]) };
                                 param.data.Add(parameter);
                             }
                             returnData = (Parameter)param;
                             break;
                        case 3:
                             param.name = "estacion";
-                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.codigo, est.nombre nombreestacion FROM clima.estaciontexto est INNER JOIN clima.precipitacionperiodoreferenciaestacion pre ON pre.codigo = est.codigo
-                                                                                WHERE est.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @") AND est.municipio IN  (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre").AsEnumerable()
+                            foreach (var d in (from p in adapter.GetDataTable(@"SELECT DISTINCT est.codigo, est.nombre FROM clima.estacion est
+                                                                                WHERE est.departamento IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                                                                AND est.municipio IN (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @")
+                                                                                ORDER BY est.nombre").AsEnumerable()
                                                select p))
                             {
-                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombreestacion"]), value = Convert.ToString(d["codigo"]) };
+                                ParameterData parameter = new ParameterData { name = Convert.ToString(d["nombre"]), value = Convert.ToString(d["codigo"]) };
                                 param.data.Add(parameter);
                             }
                             returnData = (Parameter)param;
@@ -451,10 +457,14 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            DataTable results = adapter.GetDataTable(@"SELECT est.departamento, est.municipio, est.nombre nombreestacion, pre.* FROM 
-                                                                       clima.precipitacionperiodoreferenciaestacion pre
-                                                                       INNER JOIN clima.estaciontexto est ON pre.codigo = est.codigo
-                                                                       WHERE est.codigo IN (" + string.Join(",", parameters.estacion.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre");
+                            DataTable results = adapter.GetDataTable(@"SELECT DISTINCT est.nombre nombreestacion, pre.* FROM clima.precipitacionperiodoreferenciaestacion pre
+                                                                        INNER JOIN clima.estacion est ON est.codigo = pre.codigo
+                                                                        INNER JOIN base.departamento dep ON dep.codigo = est.departamento
+                                                                        INNER JOIN base.municipio mun ON mun.codigo = est.municipio
+                                                                        WHERE dep.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                                                        AND mun.codigo IN (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @")
+                                                                        AND est.codigo IN (" + string.Join(",", parameters.estacion.Select(d => "'" + d + "'")) + @")
+                                                                        ORDER BY est.nombre");
 
                             chart.subtitle = "";
                             foreach (var d in (from g in results.AsEnumerable() select g))
@@ -486,10 +496,14 @@ namespace AgronetEstadisticas.Controllers
                     switch (parameters.id)
                     {
                         case 1:
-                            DataTable tableResults = adapter.GetDataTable(@"SELECT est.departamento, est.municipio, est.nombre nombreestacion, pre.* FROM 
-                                                                       clima.precipitacionperiodoreferenciaestacion pre
-                                                                       INNER JOIN clima.estaciontexto est ON pre.codigo = est.codigo
-                                                                       WHERE est.codigo IN (" + string.Join(",", parameters.estacion.Select(d => "'" + d + "'")) + @") ORDER BY est.nombre");
+                            DataTable tableResults = adapter.GetDataTable(@"SELECT dep.nombre departamento, mun.nombre municipio, est.nombre estacion, pre.* FROM clima.precipitacionperiodoreferenciaestacion pre
+                                                                        INNER JOIN clima.estacion est ON est.codigo = pre.codigo
+                                                                        INNER JOIN base.departamento dep ON dep.codigo = est.departamento
+                                                                        INNER JOIN base.municipio mun ON mun.codigo = est.municipio
+                                                                        WHERE dep.codigo IN (" + string.Join(",", parameters.departamento.Select(d => "'" + d + "'")) + @")
+                                                                        AND mun.codigo IN (" + string.Join(",", parameters.municipio.Select(d => "'" + d + "'")) + @")
+                                                                        AND est.codigo IN (" + string.Join(",", parameters.estacion.Select(d => "'" + d + "'")) + @")
+                                                                        ORDER BY dep.nombre, mun.nombre, est.nombre");
 
 
                             Table table = new Table { rows = tableResults };
